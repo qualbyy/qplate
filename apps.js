@@ -1162,6 +1162,23 @@
       if (item.hint) text.appendChild(make("div", "setting-hint", item.hint));
       row.appendChild(text);
 
+      if (item.type === "number") {
+        const input = make("input", "setting-select");
+        input.type = "number";
+        input.min = "10";
+        input.max = "200";
+        input.value = String(currentSettings[item.id] || item.value || 34);
+
+        input.addEventListener("input", function () {
+          const value = Math.min(200, Math.max(10, parseInt(input.value, 10) || 0));
+          ctx.applySetting(item.id, value);
+          currentSettings = ctx.getSettings();
+        });
+
+        row.appendChild(input);
+        return row;
+      }
+
       if (item.type === "select") {
         const locked = Array.isArray(item.locked) ? item.locked : [];
         const select = make("select", "setting-select");

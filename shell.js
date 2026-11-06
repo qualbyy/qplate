@@ -292,6 +292,14 @@
     clock.style.cursor = custom ? "grab" : "";
     clock.style.pointerEvents = custom ? "auto" : "";
 
+    const ownSize = settingsState.clocksize === "custom";
+    const size = Math.min(200, Math.max(10, parseInt(settingsState.clockfont, 10) || 34));
+    const timeEl = clock.querySelector(".clock-time");
+    const dateEl = clock.querySelector(".clock-date");
+
+    if (timeEl) timeEl.style.fontSize = ownSize ? size + "px" : "";
+    if (dateEl) dateEl.style.fontSize = ownSize ? Math.max(9, Math.round(size * 0.45)) + "px" : "";
+
     if (!custom) {
       clock.style.left = "";
       clock.style.top = "";
@@ -443,7 +451,7 @@
       document.body.classList.toggle("clock-pos-" + pos, (settingsState.clockpos || "tr") === pos);
     });
 
-    ["s", "m", "l", "xl"].forEach(function (size) {
+    ["s", "m", "l", "xl", "custom"].forEach(function (size) {
       document.body.classList.toggle("clock-size-" + size, (settingsState.clocksize || "m") === size);
     });
 
