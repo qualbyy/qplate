@@ -918,6 +918,53 @@
       info.appendChild(el("div", "ed-app-type", "тип: " + (win.type || "неизвестно")));
       row.appendChild(info);
 
+      const fields = el("div", "ed-app-fields");
+      fields.style.flex = "1 1 100%";
+      fields.style.display = "grid";
+      fields.style.gap = "6px";
+      fields.style.marginTop = "6px";
+      fields.style.minWidth = "0";
+
+      const nameInput = el("input", "ed-input");
+      nameInput.type = "text";
+      nameInput.placeholder = "название в доке";
+      nameInput.value = win.label || "";
+      nameInput.addEventListener("input", function () {
+        win.label = nameInput.value;
+        queueSave();
+      });
+      fields.appendChild(nameInput);
+
+      const titleInput = el("input", "ed-input");
+      titleInput.type = "text";
+      titleInput.placeholder = "заголовок окна";
+      titleInput.value = win.title || "";
+      titleInput.addEventListener("input", function () {
+        win.title = titleInput.value;
+        queueSave();
+      });
+      fields.appendChild(titleInput);
+
+      const iconKeys = Object.keys(DATA.icons || {});
+      if (iconKeys.indexOf(win.iconKey) < 0) iconKeys.unshift(win.iconKey || "");
+      const iconSelect = el("select", "ed-select");
+      iconKeys.forEach(function (key) {
+        const option = el("option", null, key || "без иконки");
+        option.value = key || "";
+        iconSelect.appendChild(option);
+      });
+      iconSelect.value = win.iconKey || "";
+      iconSelect.addEventListener("change", function () {
+        win.iconKey = iconSelect.value;
+        queueSave();
+        renderPanel();
+      });
+      fields.appendChild(iconSelect);
+
+      row.appendChild(fields);
+      row.style.flexWrap = "wrap";
+      row.style.alignItems = "flex-start";
+
       if (win.type !== "editor") {
         const del = el("button", "ed-btn ed-btn-danger", "удалить");
         del.type = "button";
