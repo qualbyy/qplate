@@ -203,6 +203,9 @@
       rows: clone(draft.terminal.fastfetch.rows)
     });
     DATA.windows = clone(draft.windows);
+    draft.windows.forEach(function (win) {
+      if (win.iconSvg && win.iconKey) DATA.icons[win.iconKey] = win.iconSvg;
+    });
     DATA.photos = clone(draft.photos);
     DATA.music = clone(draft.music);
     DATA.settings = clone(draft.settings);
@@ -961,6 +964,47 @@
       });
       fields.appendChild(iconSelect);
 
+      const ownBtn = el("button", "ed-btn ed-btn-main", "свой файл иконки");
+      ownBtn.type = "button";
+      ownBtn.style.flex = "none";
+      ownBtn.addEventListener("click", function () {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".svg,image/svg+xml,image/png,image/jpeg,image/webp";
+
+        input.addEventListener("change", function () {
+          const file = input.files && input.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function () {
+            let svg = String(reader.result || "");
+            const isSvgText = file.name.toLowerCase().endsWith(".svg") || svg.indexOf("<svg") >= 0;
+
+            if (!isSvgText) {
+              svg = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><image href="' +
+                svg + '" width="24" height="24" preserveAspectRatio="xMidYMid meet"/></svg>';
+            }
+
+            const key = (win.id || "app") + "-own";
+            DATA.icons[key] = svg;
+            win.iconKey = key;
+            win.iconSvg = svg;
+            queueSave();
+            renderPanel();
+          };
+          reader.onloadend = function () {
+            if (reader.error) setStatus("не получилось прочитать файл иконки", "err");
+          };
+
+          if (file.name.toLowerCase().endsWith(".svg")) reader.readAsText(file);
+          else reader.readAsDataURL(file);
+        });
+
+        input.click();
+      });
+      fields.appendChild(ownBtn);
+
       row.appendChild(fields);
       row.style.flexWrap = "wrap";
       row.style.alignItems = "flex-start";
@@ -1484,6 +1528,9 @@
     bodyRef = body;
 
     if (!draft) draft = loadDraft();
+    draft.windows.forEach(function (win) {
+      if (win.iconSvg && win.iconKey) DATA.icons[win.iconKey] = win.iconSvg;
+    });
 
     const app = el("div", "app-editor");
 
