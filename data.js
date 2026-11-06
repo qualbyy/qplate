@@ -246,19 +246,20 @@ window.DATA = {
      group — заголовок раздела, type — вид переключателя.
      type: toggle | select | wallpaper. */
   settings: [
-    { id: "theme", type: "select", group: "вид", label: "тема", hint: "светлая, тёмная или как в системе", value: "light", options: [["light", "светлая"], ["dark", "тёмная"], ["auto", "как в системе"]] },
+    { id: "theme", type: "select", group: "вид", label: "тема", hint: "светлая, тёмная или как в системе", value: "dark", options: [["light", "светлая"], ["dark", "тёмная"], ["auto", "как в системе"]] },
     { id: "motion", type: "toggle", group: "вид", label: "анимации окон", hint: "сворачивание и закрытие", value: true },
     { id: "tooltips", type: "toggle", group: "вид", label: "подсказки дока", hint: "названия приложений при наведении", value: true },
     { id: "bigtext", type: "toggle", group: "вид", label: "крупный текст", hint: "чуть больше шрифта во всех окнах", value: false },
-    { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "none", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
+    { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "dots", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
     { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата в правом верхнем углу", value: true },
     { id: "positions", type: "toggle", group: "рабочий стол", label: "запоминать окна", hint: "положение окон после перезагрузки", value: true }
   ],
 
   /* Ключевой цвет сайта: пресеты + свой из пипетки. */
   theme: {
-    accent: "sand",
+    accent: "white",
     presets: [
+      { id: "white", label: "белый", color: "#ffffff" },
       { id: "sand", label: "песок", color: "#a07844" },
       { id: "moss", label: "мох", color: "#6f8b52" },
       { id: "ocean", label: "океан", color: "#3d7196" },
