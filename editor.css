@@ -414,6 +414,196 @@
   background: var(--surface-soft);
 }
 
+/* ---------- Окно загрузки файла ---------- */
+
+.ed-load {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(36, 30, 24, 0.52);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ed-load.is-on {
+  opacity: 1;
+}
+
+.ed-load.is-out {
+  opacity: 0;
+}
+
+.ed-load-card {
+  width: min(320px, 100%);
+  padding: 24px 24px 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-paper, #fffdf8);
+  box-shadow: 0 22px 60px rgba(30, 24, 18, 0.35);
+  text-align: center;
+  transform: translateY(10px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.ed-load.is-on .ed-load-card {
+  transform: translateY(0) scale(1);
+}
+
+.ed-load-ring {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 14px;
+  border: 3px solid var(--accent);
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: edLoadSpin 0.9s linear infinite;
+}
+
+.ed-load-ring::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.18;
+  animation: edLoadPulse 1.6s ease-in-out infinite;
+}
+
+.ed-load-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.ed-load-file {
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-load-bar {
+  height: 8px;
+  margin: 16px 0 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--surface-mute);
+}
+
+.ed-load-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--sand-dark), var(--accent));
+  background-size: 200% 100%;
+  transition: width 0.18s ease;
+  animation: edLoadShine 1.4s linear infinite;
+}
+
+.ed-load-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-load-pct {
+  font-weight: 700;
+  color: var(--text);
+}
+
+@keyframes edLoadSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes edLoadPulse {
+  50% {
+    transform: scale(0.72);
+    opacity: 0.35;
+  }
+}
+
+@keyframes edLoadShine {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.no-motion .ed-load-ring,
+.no-motion .ed-load-ring::after,
+.no-motion .ed-load-fill {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed-load-ring,
+  .ed-load-ring::after,
+  .ed-load-fill {
+    animation: none;
+  }
+
+  .ed-load,
+  .ed-load-card,
+  .ed-load-fill {
+    transition: none;
+  }
+}
+
+/* ---------- Дерево файлов ---------- */
+
+.ed-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ed-tree-root {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.ed-tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-left: 12px;
+  border-left: 2px dashed var(--border-dark);
+}
+
+.ed-tree-node {
+  background: var(--surface-paper);
+}
+
+.ed-tree-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ed-tree-actions .ed-btn {
+  padding: 4px 9px;
+  font-size: 11px;
+}
+
 /* ---------- Узкий экран ---------- */
 
 @media (max-width: 620px) {

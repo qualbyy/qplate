@@ -17,6 +17,121 @@
   const isMobile = () => window.innerWidth <= 768;
   const motionOn = () => !document.body.classList.contains("no-motion");
 
+  /* ---------- Цвета обложек ----------
+     Каждая обложка получает свой отсвет и подложку,
+     цвет берём прямо из картинки. */
+
+  const coverColorCache = new Map();
+
+  function darkenColor(color) {
+    return {
+      r: Math.round(color.r * 0.58),
+      g: Math.round(color.g * 0.58),
+      b: Math.round(color.b * 0.58)
+    };
+  }
+
+  function coverColors(img) {
+    try {
+      const size = 24;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return null;
+
+      ctx.drawImage(img, 0, 0, size, size);
+      const pixels = ctx.getImageData(0, 0, size, size).data;
+      const buckets = new Map();
+      const total = { r: 0, g: 0, b: 0, w: 0 };
+
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i + 3] < 140) continue;
+
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const light = (max + min) / 2;
+
+        if (light < 18 || light > 244) continue;
+
+        total.r += r;
+        total.g += g;
+        total.b += b;
+        total.w += 1;
+
+        const key = (r >> 4) + "," + (g >> 4) + "," + (b >> 4);
+        let bucket = buckets.get(key);
+        if (!bucket) {
+          bucket = { r: 0, g: 0, b: 0, w: 0 };
+          buckets.set(key, bucket);
+        }
+        const sat = max === 0 ? 0 : (max - min) / max;
+        const weight = 0.35 + sat;
+        bucket.r += r * weight;
+        bucket.g += g * weight;
+        bucket.b += b * weight;
+        bucket.w += weight;
+      }
+
+      const list = [];
+      buckets.forEach(function (bucket) {
+        if (bucket.w > 0) {
+          list.push({
+            r: Math.round(bucket.r / bucket.w),
+            g: Math.round(bucket.g / bucket.w),
+            b: Math.round(bucket.b / bucket.w),
+            w: bucket.w
+          });
+        }
+      });
+      list.sort(function (a, b) { return b.w - a.w; });
+
+      if (!list.length) {
+        if (!total.w) return null;
+        const gray = {
+          r: Math.round(total.r / total.w),
+          g: Math.round(total.g / total.w),
+          b: Math.round(total.b / total.w)
+        };
+        return [gray, darkenColor(gray)];
+      }
+
+      const first = list[0];
+      let second = null;
+      for (let i = 1; i < list.length; i++) {
+        const c = list[i];
+        if (Math.abs(c.r - first.r) + Math.abs(c.g - first.g) + Math.abs(c.b - first.b) > 80) {
+          second = c;
+          break;
+        }
+      }
+
+      return [first, second || darkenColor(first)];
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function paintCoverColors(item, art) {
+    const src = art.currentSrc || art.getAttribute("src") || "";
+    if (!src) return;
+
+    let colors = coverColorCache.get(src);
+    if (colors === undefined) {
+      colors = coverColors(art);
+      coverColorCache.set(src, colors);
+    }
+    if (!colors) return;
+
+    item.style.setProperty("--cf-a", colors[0].r + ", " + colors[0].g + ", " + colors[0].b);
+    item.style.setProperty("--cf-b", colors[1].r + ", " + colors[1].g + ", " + colors[1].b);
+    item.classList.add("has-cover-color");
+  }
+
   function make(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -798,11 +913,15 @@
 
       const art = make("img", "cf-art");
       if (data.coverMode === "accent") art.classList.add("is-accent");
-      art.src = track.cover || data.cover || "";
       art.alt = "";
+      art.addEventListener("load", function () {
+        paintCoverColors(item, art);
+      });
       art.addEventListener("error", function () {
         art.classList.add("is-missing");
       });
+      art.src = track.cover || data.cover || "";
+      if (art.complete && art.naturalWidth) paintCoverColors(item, art);
 
       const name = make("span", "cf-name", track.title || "без названия");
       item.appendChild(art);
@@ -818,6 +937,7 @@
     });
 
     coverflow.appendChild(stage);
+    coverflow.title = "листай ← → или j / k, a / d";
     app.appendChild(coverflow);
 
     const single = make("div", "music-card");
@@ -913,9 +1033,16 @@
       return Math.floor(safe / 60) + ":" + String(safe % 60).padStart(2, "0");
     }
 
+    function trackLength(track) {
+      if (track && track.src && audio && Number.isFinite(audio.duration) && audio.duration > 0) {
+        return audio.duration;
+      }
+      return Math.max(1, (track && track.seconds) || 1);
+    }
+
     function paint() {
       const track = tracks[current];
-      const duration = Math.max(1, track.seconds || 1);
+      const duration = trackLength(track);
       const percent = Math.min(1000, Math.round((elapsed / duration) * 1000));
 
       trackTitle.textContent = track.title || "без названия";
@@ -950,7 +1077,7 @@
         elapsed += (now - lastTick) / 1000;
         lastTick = now;
 
-        const duration = Math.max(1, tracks[current].seconds || 1);
+        const duration = trackLength(tracks[current]);
 
         if (elapsed >= duration) {
           elapsed = 0;
@@ -983,6 +1110,7 @@
     function selectTrack(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       elapsed = 0;
+      stopTimer();
 
       if (audio) {
         audio.pause();
@@ -998,8 +1126,10 @@
 
       if (autoplay) {
         playing = true;
-        lastTick = Date.now();
-        startTimer();
+        if (!tracks[current].src) {
+          lastTick = Date.now();
+          startTimer();
+        }
         paint();
       }
     }
@@ -1019,6 +1149,17 @@
       selectTrack(current, true);
     });
 
+    audio.addEventListener("play", function () {
+      playing = true;
+      lastTick = Date.now();
+      paint();
+    });
+
+    audio.addEventListener("pause", function () {
+      playing = false;
+      paint();
+    });
+
     play.addEventListener("click", function () {
       if (!tracks[current].src) return togglePlay();
       if (audio.paused) audio.play().catch(function () {});
@@ -1034,11 +1175,38 @@
     });
 
     range.addEventListener("input", function () {
-      const duration = Math.max(1, tracks[current].seconds || 1);
+      const duration = trackLength(tracks[current]);
       elapsed = (Number(range.value) / 1000) * duration;
       if (tracks[current].src && audio.duration > 0) audio.currentTime = elapsed;
       paint();
     });
+
+    function onMusicKey(e) {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (app.classList.contains("is-single") || !app.isConnected) return;
+
+      const target = e.target;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" || target.isContentEditable)) return;
+
+      const win = body.closest ? body.closest(".window") : null;
+      if (!win || !win.classList.contains("is-focused") ||
+        win.classList.contains("is-minimized") || win.classList.contains("is-closing")) return;
+
+      const key = e.key;
+      let step = 0;
+      if (key === "ArrowLeft" || key === "a" || key === "A" || key === "j" || key === "J") step = -1;
+      else if (key === "ArrowRight" || key === "d" || key === "D" || key === "k" || key === "K") step = 1;
+      if (!step) return;
+
+      e.preventDefault();
+      selectTrack(current + step, false);
+      if (items[current] && items[current].scrollIntoView) {
+        items[current].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+      }
+    }
+
+    document.addEventListener("keydown", onMusicKey);
 
     paint();
 

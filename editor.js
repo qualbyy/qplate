@@ -134,6 +134,9 @@
       settings: clone(Array.isArray(s.settings) ? s.settings : []),
       theme: clone(s.theme || {}),
       photos: clone(Array.isArray(s.photos) ? s.photos : []),
+      files: clone((s.files && s.files.root) ? s.files : {
+        root: { name: "~", type: "folder", children: [] }
+      }),
       music: {
         cover: (s.music && s.music.cover) || "",
         coverMode: (s.music && s.music.coverMode) || "photo",
@@ -170,6 +173,11 @@
     if (!Array.isArray(d.theme.presets)) d.theme.presets = clone((DATA.theme && DATA.theme.presets) || []);
     if (!Array.isArray(d.theme.locked)) d.theme.locked = [];
     if (!Array.isArray(d.photos)) d.photos = clone(DATA.photos || []);
+    if (!d.files || !d.files.root) {
+      d.files = clone(DATA.files || {});
+      if (!d.files.root) d.files.root = { name: "~", type: "folder", children: [] };
+    }
+    if (!Array.isArray(d.files.root.children)) d.files.root.children = [];
     if (!d.music) d.music = clone(DATA.music || {});
     if (!Array.isArray(d.music.tracks)) d.music.tracks = [];
 
@@ -209,6 +217,7 @@
       if (win.iconSvg && win.iconKey) DATA.icons[win.iconKey] = win.iconSvg;
     });
     DATA.photos = clone(draft.photos);
+    DATA.files = clone(draft.files);
     DATA.music = clone(draft.music);
     DATA.settings = clone(draft.settings);
     DATA.theme = Object.assign({}, DATA.theme, draft.theme);
@@ -266,6 +275,80 @@
     img.src = dataUrl;
   }
 
+  /* ---------- Окно загрузки файла ---------- */
+
+  let loadNode = null;
+  let loadCloseTimer = null;
+
+  function closeLoader() {
+    window.clearTimeout(loadCloseTimer);
+    const node = loadNode;
+    loadNode = null;
+    if (!node) return;
+
+    node.classList.add("is-out");
+    window.setTimeout(function () {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }, 220);
+  }
+
+  function showLoader(fileName) {
+    closeLoader();
+
+    const wrap = el("div", "ed-load");
+    const card = el("div", "ed-load-card");
+    const ring = el("div", "ed-load-ring");
+    const title = el("div", "ed-load-title", "загрузка файла");
+    const name = el("div", "ed-load-file", fileName || "");
+    const bar = el("div", "ed-load-bar");
+    const fill = el("span", "ed-load-fill");
+    const row = el("div", "ed-load-row");
+    const note = el("span", "ed-load-note", "читаем данные");
+    const pct = el("span", "ed-load-pct", "0%");
+
+    if (fileName) name.title = fileName;
+
+    bar.appendChild(fill);
+    row.appendChild(note);
+    row.appendChild(pct);
+    card.appendChild(ring);
+    card.appendChild(title);
+    card.appendChild(name);
+    card.appendChild(bar);
+    card.appendChild(row);
+    wrap.appendChild(card);
+    wrap.setAttribute("role", "status");
+    wrap.setAttribute("aria-live", "polite");
+
+    document.body.appendChild(wrap);
+    window.requestAnimationFrame(function () {
+      wrap.classList.add("is-on");
+    });
+
+    const started = Date.now();
+    loadNode = wrap;
+
+    return {
+      set: function (percent, text) {
+        const safe = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+        fill.style.width = safe + "%";
+        pct.textContent = safe + "%";
+        if (text) note.textContent = text;
+      },
+      done: function (text) {
+        this.set(100, text || "готово");
+        window.clearTimeout(loadCloseTimer);
+        loadCloseTimer = window.setTimeout(closeLoader, Math.max(0, 750 - (Date.now() - started)));
+      },
+      fail: function (text) {
+        note.textContent = text || "не удалось прочитать файл";
+        pct.textContent = "—";
+        window.clearTimeout(loadCloseTimer);
+        loadCloseTimer = window.setTimeout(closeLoader, 1100);
+      }
+    };
+  }
+
   function pickButton(accept, onResult) {
     const btn = el("button", "ed-btn ed-btn-main", "из файла");
     btn.type = "button";
@@ -281,7 +364,15 @@
         if (!file) return;
 
         const isImage = accept.indexOf("image") === 0;
+        const isAudio = accept.indexOf("audio") === 0;
+        const load = showLoader(file.name);
         const reader = new FileReader();
+
+        reader.onprogress = function (e) {
+          if (e && e.lengthComputable && e.total) {
+            load.set((e.loaded / e.total) * 100, "читаем данные");
+          }
+        };
 
         reader.onload = function () {
           const result = String(reader.result || "");
@@ -290,6 +381,7 @@
             onResult(result, file);
             queueSave();
             renderPanel();
+            load.done("файл загружен");
             return;
           }
 
@@ -297,14 +389,16 @@
             onResult(value, file);
             queueSave();
             renderPanel();
+            load.done("файл загружен");
           });
         };
 
         reader.onerror = function () {
           setStatus("не удалось прочитать файл", "err");
+          load.fail("не удалось прочитать файл");
         };
 
-        if (isImage) reader.readAsDataURL(file);
+        if (isImage || isAudio) reader.readAsDataURL(file);
         else reader.readAsText(file);
       });
 
@@ -328,6 +422,7 @@
       input = el("input", "ed-input");
       input.type = "text";
       input.value = value || "";
+      if (options.placeholder) input.placeholder = options.placeholder;
     }
 
     input.addEventListener("input", function () {
@@ -612,6 +707,121 @@
     });
   }
 
+  function filesTab() {
+    if (!draft.files || !draft.files.root) {
+      draft.files = clone((DATA.files && DATA.files.root) ? DATA.files : {
+        root: { name: "~", type: "folder", children: [] }
+      });
+    }
+    if (!draft.files.root) draft.files.root = { name: "~", type: "folder", children: [] };
+    if (!Array.isArray(draft.files.root.children)) draft.files.root.children = [];
+
+    const wrap = el("div", "ed-tree");
+    wrap.appendChild(el("div", "ed-hint", "папки и файлы окна «файлы». текст файла показывается по клику, как в проводнике."));
+
+    function addNode(parent, type) {
+      if (!Array.isArray(parent.children)) parent.children = [];
+
+      if (type === "folder") {
+        parent.children.push({ name: "новая папка", type: "folder", children: [] });
+      } else {
+        parent.children.push({ name: "новый файл.txt", type: "file", content: "" });
+      }
+
+      queueSave();
+      renderPanel();
+    }
+
+    function actionRow(parent) {
+      const row = el("div", "ed-tree-actions");
+
+      const folder = el("button", "ed-btn", "+ папка");
+      folder.type = "button";
+      folder.addEventListener("click", function () {
+        addNode(parent, "folder");
+      });
+
+      const file = el("button", "ed-btn", "+ файл");
+      file.type = "button";
+      file.addEventListener("click", function () {
+        addNode(parent, "file");
+      });
+
+      row.appendChild(folder);
+      row.appendChild(file);
+      return row;
+    }
+
+    function nodeCard(node, parent) {
+      const card = el("div", "ed-card ed-tree-node");
+
+      const head = el("div", "ed-card-head");
+      head.appendChild(el("span", "ed-card-title", node.type === "folder" ? "папка" : "файл"));
+
+      const del = el("button", "ed-btn ed-btn-danger", "удалить");
+      del.type = "button";
+      del.addEventListener("click", function () {
+        if (node.type === "folder" && Array.isArray(node.children) && node.children.length) {
+          if (!window.confirm("удалить папку «" + (node.name || "без имени") + "» вместе с содержимым?")) return;
+        }
+
+        const index = Array.isArray(parent.children) ? parent.children.indexOf(node) : -1;
+        if (index >= 0) parent.children.splice(index, 1);
+
+        queueSave();
+        renderPanel();
+      });
+      head.appendChild(del);
+      card.appendChild(head);
+
+      card.appendChild(field("название", node.name || "", function (value) {
+        node.name = value;
+      }));
+
+      if (node.type === "folder") {
+        if (!Array.isArray(node.children)) node.children = [];
+
+        const children = el("div", "ed-tree-children");
+        node.children.forEach(function (child) {
+          children.appendChild(nodeCard(child, node));
+        });
+
+        if (!node.children.length) {
+          children.appendChild(el("div", "ed-empty", "папка пустая"));
+        }
+
+        card.appendChild(children);
+        card.appendChild(actionRow(node));
+      } else {
+        card.appendChild(field("содержимое", node.content || "", function (value) {
+          node.content = value;
+        }, { multiline: true, rows: 6, code: true }));
+      }
+
+      return card;
+    }
+
+    const rootCard = el("div", "ed-card");
+    const rootHead = el("div", "ed-card-head");
+    rootHead.appendChild(el("span", "ed-card-title", "корень · " + (draft.files.root.name || "~")));
+    rootCard.appendChild(rootHead);
+
+    const rootChildren = el("div", "ed-tree-children ed-tree-root");
+    draft.files.root.children.forEach(function (child) {
+      rootChildren.appendChild(nodeCard(child, draft.files.root));
+    });
+
+    if (!draft.files.root.children.length) {
+      rootChildren.appendChild(el("div", "ed-empty", "файлов пока нет"));
+    }
+
+    rootCard.appendChild(rootChildren);
+    rootCard.appendChild(actionRow(draft.files.root));
+    wrap.appendChild(rootCard);
+
+    return wrap;
+  }
+
   function photosTab() {
     const wrap = el("div", "ed-card");
     wrap.appendChild(el("div", "ed-card-title", "фотографии"));
@@ -729,14 +939,19 @@
         track.seconds = Math.max(1, parseInt(value, 10) || 1);
       }));
 
-      card.appendChild(field("файл трека", track.src || "", function (value) {
+      const embedded = (track.src || "").indexOf("data:") === 0;
+
+      card.appendChild(field("файл трека", embedded ? "" : (track.src || ""), function (value) {
         track.src = value;
+        if (!value) delete track.srcName;
       }, {
-        hint: "адрес mp3 или выбрать файл с устройства",
+        placeholder: embedded ? "файл выбран: " + (track.srcName || "встроенный файл") : "адрес mp3",
+        hint: "адрес mp3 или выбрать файл с устройства; файл встраивается в сайт",
         pick: {
           accept: "audio/*",
-          apply: function (value) {
+          apply: function (value, file) {
             track.src = value;
+            if (file) track.srcName = file.name;
           }
         }
       }));
@@ -1244,6 +1459,7 @@
     { id: "notes", label: "заметки" },
     { id: "pdf", label: "документы" },
     { id: "browser", label: "браузер" },
+    { id: "files", label: "файлы" },
     { id: "photos", label: "фото" },
     { id: "music", label: "музыка" },
     { id: "settings", label: "настройки" },
@@ -1275,6 +1491,7 @@
     if (activeTab === "notes") panelRef.appendChild(notesTab());
     else if (activeTab === "pdf") panelRef.appendChild(pdfTab());
     else if (activeTab === "browser") panelRef.appendChild(browserTab());
+    else if (activeTab === "files") panelRef.appendChild(filesTab());
     else if (activeTab === "photos") panelRef.appendChild(photosTab());
     else if (activeTab === "music") panelRef.appendChild(musicTab());
     else if (activeTab === "settings") panelRef.appendChild(settingsTab());
