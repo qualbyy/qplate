@@ -27,7 +27,7 @@ assets/      — локальные картинки для галереи и п
 1. Скопируй папку целиком:
 
    ```
-   cp -r bio-skeleton мой-сайт
+   cp -r ~/qplate ~/мой-сайт
    ```
 
 2. Открой `data.js` и поменяй:
@@ -130,7 +130,15 @@ return {
 На компьютере:
 
 ```
-cd bio-skeleton
+git clone https://github.com/qualbyy/qplate.git
+cd qplate
+python3 -m http.server 8000
+```
+
+Если папка уже есть, хватит двух строк:
+
+```
+cd ~/qplate
 python3 -m http.server 8000
 ```
 
