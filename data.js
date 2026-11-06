@@ -63,7 +63,8 @@ window.DATA = {
         file: "about.txt",
         desc: "об этом скелетоне",
         html: `<p>это скелетон личного сайта: рабочий стол, док и восемь готовых окон.</p>
-<p>весь текст, ссылки и названия окон лежат в data.js. меняй их — и получится твой проект.</p>`
+<p>весь текст, ссылки и названия окон лежат в data.js. меняй их — и получится твой проект.</p>
+<p>разработано <a class="term-link" href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a> · сайт конструктора: <a class="term-link" href="https://qualbyy.github.io/qplate" target="_blank" rel="noopener">qualbyy.github.io/qplate</a></p>`
       },
       stack: {
         file: "stack.md",
@@ -82,6 +83,8 @@ window.DATA = {
   <div class="table-row"><span class="table-key">github</span><span class="table-val"><a class="term-link" href="https://github.com/" target="_blank" rel="noopener">github.com</a></span></div>
   <div class="table-row"><span class="table-key">telegram</span><span class="table-val"><a class="term-link" href="https://t.me/" target="_blank" rel="noopener">t.me</a></span></div>
   <div class="table-row"><span class="table-key">почта</span><span class="table-val">hello@example.com</span></div>
+  <div class="table-row"><span class="table-key">разработано</span><span class="table-val"><a class="term-link" href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a></span></div>
+  <div class="table-row"><span class="table-key">конструктор</span><span class="table-val"><a class="term-link" href="https://qualbyy.github.io/qplate" target="_blank" rel="noopener">qualbyy.github.io/qplate</a></span></div>
 </div>`
       }
     },
