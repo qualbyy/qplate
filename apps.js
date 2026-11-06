@@ -786,6 +786,50 @@
       return;
     }
 
+    const items = [];
+
+    const coverflow = make("div", "music-coverflow");
+    const stage = make("div", "music-coverflow-stage");
+
+    tracks.forEach(function (track, index) {
+      const item = make("button", "cf-item");
+      item.type = "button";
+      item.setAttribute("aria-label", (track.title || "трек") + ", " + (track.artist || ""));
+
+      const art = make("img", "cf-art");
+      if (data.coverMode === "accent") art.classList.add("is-accent");
+      art.src = track.cover || data.cover || "";
+      art.alt = "";
+      art.addEventListener("error", function () {
+        art.classList.add("is-missing");
+      });
+
+      const name = make("span", "cf-name", track.title || "без названия");
+      item.appendChild(art);
+      item.appendChild(name);
+
+      item.addEventListener("click", function () {
+        selectTrack(index, false);
+        showSingle(true);
+      });
+
+      items.push(item);
+      stage.appendChild(item);
+    });
+
+    coverflow.appendChild(stage);
+    app.appendChild(coverflow);
+
+    const single = make("div", "music-card");
+
+    const back = make("button", "music-back", "← все треки");
+    back.type = "button";
+    back.addEventListener("click", function () {
+      pause();
+      showSingle(false);
+    });
+    single.appendChild(back);
+
     const cover = make("img", "music-cover");
     if (data.coverMode === "accent") cover.classList.add("is-accent");
     cover.src = data.cover || "";
@@ -839,11 +883,12 @@
     controls.appendChild(play);
     controls.appendChild(next);
 
-    app.appendChild(cover);
-    app.appendChild(meta);
-    app.appendChild(progress);
-    app.appendChild(controls);
-    app.appendChild(make("div", "music-note", data.note || "звука нет — только визуальный прогресс."));
+    single.appendChild(cover);
+    single.appendChild(meta);
+    single.appendChild(progress);
+    single.appendChild(controls);
+    single.appendChild(make("div", "music-note", data.note || "звука нет — только визуальный прогресс."));
+    app.appendChild(single);
     body.appendChild(app);
 
     let current = 0;
@@ -851,6 +896,17 @@
     let playing = false;
     let timer = null;
     let lastTick = 0;
+
+    function showSingle(on) {
+      app.classList.toggle("is-single", on);
+
+      if (!on) {
+        const active = items[current];
+        if (active && active.scrollIntoView) {
+          active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+        }
+      }
+    }
 
     function formatTime(seconds) {
       const safe = Math.max(0, Math.floor(seconds || 0));
@@ -870,6 +926,10 @@
       totalText.textContent = formatTime(duration);
       play.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
       play.setAttribute("aria-label", playing ? "пауза" : "играть");
+
+      items.forEach(function (item, index) {
+        item.classList.toggle("is-active", index === current);
+      });
     }
 
     function stopTimer() {
@@ -981,6 +1041,10 @@
     });
 
     paint();
+
+    if (items[current] && items[current].scrollIntoView) {
+      items[current].scrollIntoView({ inline: "center", block: "nearest" });
+    }
 
     return {
       onHide: pause
