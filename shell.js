@@ -19,6 +19,7 @@
   const settingsKey = "desktop-settings-v1";
   const themeKey = "desktop-accent-v1";
   const positionKey = "desktop-window-positions-v1";
+  const stateKey = "desktop-window-state-v1";
   const wallpaperKey = "desktop-wallpaper-v1";
 
   const windows = new Map();
@@ -413,8 +414,36 @@
   function clearPositions() {
     try {
       localStorage.removeItem(positionKey);
+      localStorage.removeItem(stateKey);
     } catch (err) {
       /* ничего */
+    }
+  }
+
+  function saveOpenState() {
+    if (!settingsState.positions || isMobile()) return;
+
+    const ids = DATA.windows.filter(function (cfg) {
+      return state[cfg.id];
+    }).map(function (cfg) {
+      return cfg.id;
+    });
+
+    try {
+      localStorage.setItem(stateKey, JSON.stringify(ids));
+    } catch (err) {
+      /* ничего */
+    }
+  }
+
+  function loadOpenState() {
+    if (!settingsState.positions || isMobile()) return null;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(stateKey) || "null");
+      return Array.isArray(saved) ? saved : null;
+    } catch (err) {
+      return null;
     }
   }
 
@@ -734,6 +763,7 @@
       win.dataset.positioned = "1";
     }
 
+    saveOpenState();
     focusWindow(id);
 
     const lifecycle = lifecycles.get(id);
@@ -753,6 +783,7 @@
     win.classList.add("is-minimized");
     win.setAttribute("aria-hidden", "true");
     updateDock(id, false);
+    saveOpenState();
 
     const lifecycle = lifecycles.get(id);
     if (lifecycle && typeof lifecycle.onHide === "function") lifecycle.onHide();
@@ -768,6 +799,7 @@
     const win = windows.get(id);
     state[id] = false;
     updateDock(id, false);
+    saveOpenState();
     win.classList.remove("is-minimized");
     win.classList.add("is-closing");
 
@@ -1119,8 +1151,11 @@
 
     buildDock();
 
+    const savedOpen = loadOpenState();
+
     DATA.windows.forEach(function (cfg) {
-      if (cfg.open) openWindow(cfg.id);
+      const shouldOpen = savedOpen ? savedOpen.indexOf(cfg.id) >= 0 : cfg.open;
+      if (shouldOpen) openWindow(cfg.id);
     });
 
     window.addEventListener("resize", onResize);
