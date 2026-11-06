@@ -80,9 +80,8 @@ window.DATA = {
         file: "links.txt",
         desc: "ссылки и контакты",
         html: `<div class="table-view">
-  <div class="table-row"><span class="table-key">github</span><span class="table-val"><a class="term-link" href="https://github.com/" target="_blank" rel="noopener">github.com</a></span></div>
-  <div class="table-row"><span class="table-key">telegram</span><span class="table-val"><a class="term-link" href="https://t.me/" target="_blank" rel="noopener">t.me</a></span></div>
-  <div class="table-row"><span class="table-key">почта</span><span class="table-val">hello@example.com</span></div>
+  <div class="table-row"><span class="table-key">telegram</span><span class="table-val"><a class="term-link" href="https://t.me/qualbyyy" target="_blank" rel="noopener">t.me/qualbyyy</a></span></div>
+  <div class="table-row"><span class="table-key">почта</span><span class="table-val">qualbyy@gmail.com</span></div>
   <div class="table-row"><span class="table-key">разработано</span><span class="table-val"><a class="term-link" href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a></span></div>
   <div class="table-row"><span class="table-key">конструктор</span><span class="table-val"><a class="term-link" href="https://qualbyy.github.io/qplate" target="_blank" rel="noopener">qualbyy.github.io/qplate</a></span></div>
 </div>`
