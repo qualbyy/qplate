@@ -129,7 +129,6 @@
 
     item.style.setProperty("--cf-a", colors[0].r + ", " + colors[0].g + ", " + colors[0].b);
     item.style.setProperty("--cf-b", colors[1].r + ", " + colors[1].g + ", " + colors[1].b);
-    item.classList.add("has-cover-color");
   }
 
   function make(tag, className, text) {
