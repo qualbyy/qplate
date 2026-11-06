@@ -704,12 +704,8 @@
         accept: "image/*",
         apply: function (value) { draft.meta.preview.image = value; }
       },
-      hint: "по умолчанию assets/preview.png, ширину делай около 1200 px"
+      hint: "по умолчанию assets/preview.png, ширину делай около 1200 px. адрес сайта подставится сам"
     }));
-
-    box.appendChild(field("адрес сайта", draft.meta.preview.url, function (value) {
-      draft.meta.preview.url = value;
-    }, { placeholder: "https://qualbyy.github.io/qplate/", hint: "нужен, чтобы картинка была полным адресом" }));
 
     const image = document.createElement("img");
     image.className = "ed-preview-img";
