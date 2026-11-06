@@ -975,6 +975,40 @@
       });
       fields.appendChild(titleInput);
 
+      const sizeRow = el("div", "ed-row");
+
+      const widthBox = el("div", "ed-field");
+      widthBox.appendChild(el("span", "ed-label", "ширина, точек"));
+      const widthInput = el("input", "ed-input");
+      widthInput.type = "number";
+      widthInput.min = "280";
+      widthInput.step = "20";
+      widthInput.value = String(win.width || 620);
+      widthInput.addEventListener("input", function () {
+        win.width = Math.max(280, parseInt(widthInput.value, 10) || 620);
+        queueSave();
+      });
+      widthBox.appendChild(widthInput);
+
+      const heightBox = el("div", "ed-field");
+      heightBox.appendChild(el("span", "ed-label", "высота, точек"));
+      const heightInput = el("input", "ed-input");
+      heightInput.type = "number";
+      heightInput.min = "180";
+      heightInput.step = "20";
+      heightInput.placeholder = "по содержимому";
+      heightInput.value = win.height ? String(win.height) : "";
+      heightInput.addEventListener("input", function () {
+        const value = parseInt(heightInput.value, 10);
+        win.height = value ? Math.max(180, value) : 0;
+        queueSave();
+      });
+      heightBox.appendChild(heightInput);
+
+      sizeRow.appendChild(widthBox);
+      sizeRow.appendChild(heightBox);
+      fields.appendChild(sizeRow);
+
       const iconKeys = Object.keys(DATA.icons || {});
       if (iconKeys.indexOf(win.iconKey) < 0) iconKeys.unshift(win.iconKey || "");
       const iconSelect = el("select", "ed-select");

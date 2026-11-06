@@ -314,11 +314,18 @@
     const win = windows.get(id);
     if (!win) return;
 
+    if (win.classList.contains("is-maximized")) return;
+
     const all = loadPositions();
     all[id] = {
       left: parseInt(win.style.left, 10) || 10,
       top: parseInt(win.style.top, 10) || 10
     };
+
+    if (win.dataset.sized) {
+      all[id].width = parseInt(win.style.width, 10) || 0;
+      all[id].height = parseInt(win.style.height, 10) || 0;
+    }
 
     try {
       localStorage.setItem(positionKey, JSON.stringify(all));
@@ -347,6 +354,13 @@
 
     win.style.left = Math.min(Math.max(10, saved.left || 10), maxLeft) + "px";
     win.style.top = Math.min(Math.max(10, saved.top || 10), maxTop) + "px";
+
+    if (saved.width && saved.height) {
+      win.style.width = Math.max(280, saved.width) + "px";
+      win.style.height = Math.max(180, saved.height) + "px";
+      win.dataset.sized = "1";
+    }
+
     win.dataset.positioned = "1";
     return true;
   }
@@ -395,7 +409,19 @@
 
     win.querySelector(".window-title").textContent = cfg.title;
     win.setAttribute("aria-label", cfg.title);
-    win.style.width = (cfg.width || 620) + "px";
+
+    const cfgSize = (cfg.width || 620) + "x" + (cfg.height || 0);
+
+    if (win.dataset.cfgSize !== cfgSize) {
+      win.dataset.cfgSize = cfgSize;
+      delete win.dataset.sized;
+    }
+
+    if (!win.dataset.sized) {
+      win.style.width = (cfg.width || 620) + "px";
+      if (cfg.height) win.style.height = cfg.height + "px";
+      else win.style.removeProperty("height");
+    }
 
     const body = win.querySelector(".window-body");
     body.innerHTML = "";
@@ -435,12 +461,20 @@
       '  <div class="window-controls">',
       '    <button type="button" class="win-btn btn-close" aria-label="закрыть" title="закрыть"></button>',
       '    <button type="button" class="win-btn btn-min" aria-label="свернуть" title="свернуть"></button>',
-      '    <button type="button" class="win-btn btn-max" aria-label="центрировать" title="центрировать"></button>',
+      '    <button type="button" class="win-btn btn-max" aria-label="развернуть" title="развернуть"></button>',
       '  </div>',
       '  <h2 class="window-title"></h2>',
       '  <div class="window-spacer" aria-hidden="true"></div>',
       '</header>',
-      '<div class="window-body"></div>'
+      '<div class="window-body"></div>',
+      '<div class="win-grip win-grip-n" data-dir="n"></div>',
+      '<div class="win-grip win-grip-s" data-dir="s"></div>',
+      '<div class="win-grip win-grip-w" data-dir="w"></div>',
+      '<div class="win-grip win-grip-e" data-dir="e"></div>',
+      '<div class="win-grip win-grip-nw" data-dir="nw"></div>',
+      '<div class="win-grip win-grip-ne" data-dir="ne"></div>',
+      '<div class="win-grip win-grip-sw" data-dir="sw"></div>',
+      '<div class="win-grip win-grip-se" data-dir="se"></div>'
     ].join("");
 
     win.querySelector(".window-title").textContent = cfg.title;
@@ -457,7 +491,14 @@
 
     win.querySelector(".btn-max").addEventListener("click", function (e) {
       e.stopPropagation();
-      centerAndMark(cfg.id);
+      toggleMaximize(cfg.id);
+    });
+
+    win.querySelectorAll(".win-grip").forEach(function (grip) {
+      grip.addEventListener("pointerdown", function (e) {
+        e.stopPropagation();
+        startResize(e, cfg.id, grip.dataset.dir);
+      });
     });
 
     const header = win.querySelector(".window-header");
@@ -468,7 +509,7 @@
 
     header.addEventListener("dblclick", function (e) {
       if (e.target.closest("button")) return;
-      centerAndMark(cfg.id);
+      toggleMaximize(cfg.id);
     });
 
     win.addEventListener("pointerdown", function () {
@@ -697,6 +738,100 @@
 
     win.style.left = left + "px";
     win.style.top = top + "px";
+  }
+
+  const maxSaved = new Map();
+  const MIN_WIDTH = 300;
+  const MIN_HEIGHT = 200;
+
+  function startResize(e, id, dir) {
+    if (isMobile()) return;
+
+    const win = windows.get(id);
+    if (!win || win.classList.contains("is-maximized")) return;
+
+    e.preventDefault();
+    focusWindow(id);
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startLeft = win.offsetLeft;
+    const startTop = win.offsetTop;
+    const startWidth = win.offsetWidth;
+    const startHeight = win.offsetHeight;
+
+    function move(ev) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      let left = startLeft;
+      let top = startTop;
+      let width = startWidth;
+      let height = startHeight;
+
+      if (dir.indexOf("e") >= 0) width = Math.max(MIN_WIDTH, startWidth + dx);
+      if (dir.indexOf("s") >= 0) height = Math.max(MIN_HEIGHT, startHeight + dy);
+
+      if (dir.indexOf("w") >= 0) {
+        width = Math.max(MIN_WIDTH, startWidth - dx);
+        left = startLeft + (startWidth - width);
+      }
+
+      if (dir.indexOf("n") >= 0) {
+        height = Math.max(MIN_HEIGHT, startHeight - dy);
+        top = startTop + (startHeight - height);
+      }
+
+      win.style.left = Math.round(left) + "px";
+      win.style.top = Math.round(top) + "px";
+      win.style.width = Math.round(width) + "px";
+      win.style.height = Math.round(height) + "px";
+    }
+
+    function up() {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      win.dataset.sized = "1";
+      savePosition(id);
+    }
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  function toggleMaximize(id) {
+    const win = windows.get(id);
+    if (!win || isMobile()) return;
+
+    if (win.classList.contains("is-maximized")) {
+      win.classList.remove("is-maximized");
+
+      const saved = maxSaved.get(id);
+      if (saved) {
+        win.style.left = saved.left;
+        win.style.top = saved.top;
+        win.style.width = saved.width;
+        win.style.height = saved.height;
+      }
+
+      win.querySelector(".btn-max").setAttribute("title", "развернуть");
+      win.querySelector(".btn-max").setAttribute("aria-label", "развернуть");
+      savePosition(id);
+      return;
+    }
+
+    maxSaved.set(id, {
+      left: win.style.left,
+      top: win.style.top,
+      width: win.style.width,
+      height: win.style.height
+    });
+
+    win.dataset.sized = "1";
+    win.classList.add("is-maximized");
+    win.querySelector(".btn-max").setAttribute("title", "вернуть размер");
+    win.querySelector(".btn-max").setAttribute("aria-label", "вернуть размер");
+    focusWindow(id);
   }
 
   function centerAndMark(id) {

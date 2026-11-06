@@ -106,6 +106,59 @@ button {
   will-change: transform, opacity, left, top;
 }
 
+/* Разворот на весь экран */
+.window.is-maximized {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  border-color: transparent;
+}
+
+/* Рамки для растягивания окна за края */
+.win-grip {
+  position: absolute;
+  z-index: 5;
+}
+
+.win-grip-n,
+.win-grip-s {
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.win-grip-n { top: -3px; }
+.win-grip-s { bottom: -3px; }
+
+.win-grip-w,
+.win-grip-e {
+  top: 8px;
+  bottom: 8px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.win-grip-w { left: -3px; }
+.win-grip-e { right: -3px; }
+
+.win-grip-nw,
+.win-grip-ne,
+.win-grip-sw,
+.win-grip-se {
+  width: 14px;
+  height: 14px;
+}
+
+.win-grip-nw { top: -3px; left: -3px; cursor: nwse-resize; }
+.win-grip-ne { top: -3px; right: -3px; cursor: nesw-resize; }
+.win-grip-sw { bottom: -3px; left: -3px; cursor: nesw-resize; }
+.win-grip-se { bottom: -3px; right: -3px; cursor: nwse-resize; }
+
 .window.is-focused {
   z-index: 100;
   border-color: var(--border-dark);
