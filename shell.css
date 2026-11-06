@@ -577,6 +577,24 @@ body.theme-dark.has-wallpaper .desktop::before {
   color: var(--text-dim);
 }
 
+/* Положение часов */
+body.clock-pos-tl .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; align-items: flex-start; }
+body.clock-pos-tc .desktop-clock { left: 50%; right: auto; top: 14px; bottom: auto; transform: translateX(-50%); align-items: center; }
+body.clock-pos-tr .desktop-clock { right: 18px; left: auto; top: 14px; bottom: auto; }
+body.clock-pos-bl .desktop-clock { left: 18px; right: auto; bottom: 18px; top: auto; align-items: flex-start; }
+body.clock-pos-bc .desktop-clock { left: 50%; right: auto; bottom: 18px; top: auto; transform: translateX(-50%); align-items: center; }
+body.clock-pos-br .desktop-clock { right: 18px; left: auto; bottom: 18px; top: auto; }
+body.clock-pos-center .desktop-clock { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); align-items: center; }
+body.clock-pos-custom .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; transform: none; align-items: flex-start; }
+
+/* Размер часов */
+body.clock-size-s .clock-time { font-size: 15px; }
+body.clock-size-l .clock-time { font-size: 30px; }
+body.clock-size-xl .clock-time { font-size: 46px; }
+body.clock-size-s .clock-date { font-size: 9.5px; }
+body.clock-size-l .clock-date { font-size: 12.5px; }
+body.clock-size-xl .clock-date { font-size: 14px; }
+
 body.no-clock .desktop-clock {
   display: none;
 }

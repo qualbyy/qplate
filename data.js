@@ -252,7 +252,9 @@ window.DATA = {
     { id: "tooltips", type: "toggle", group: "вид", label: "подсказки дока", hint: "названия приложений при наведении", value: true },
     { id: "bigtext", type: "toggle", group: "вид", label: "крупный текст", hint: "чуть больше шрифта во всех окнах", value: false },
     { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "dots", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
-    { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата в правом верхнем углу", value: true },
+    { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата на рабочем столе", value: true },
+    { id: "clockpos", type: "select", group: "рабочий стол", label: "где часы", hint: "угол, центр или своё место", value: "tr", options: [["tl", "слева сверху"], ["tc", "сверху по центру"], ["tr", "справа сверху"], ["bl", "слева снизу"], ["bc", "снизу по центру"], ["br", "справа снизу"], ["center", "по центру"], ["custom", "своё место"]] },
+    { id: "clocksize", type: "select", group: "рабочий стол", label: "размер часов", hint: "насколько крупно время", value: "m", options: [["s", "мелкие"], ["m", "обычные"], ["l", "крупные"], ["xl", "очень крупные"]] },
     { id: "positions", type: "toggle", group: "рабочий стол", label: "запоминать окна", hint: "положение окон после перезагрузки", value: true }
   ],
 

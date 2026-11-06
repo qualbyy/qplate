@@ -273,7 +273,73 @@
 
   /* ---------- Часы ---------- */
 
+  const clockPosKey = "desktop-clock-pos-v1";
   let clockTimer = null;
+
+  function loadClockPos() {
+    try {
+      return JSON.parse(localStorage.getItem(clockPosKey) || "null") || null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function applyClockPos() {
+    const clock = document.querySelector(".desktop-clock");
+    if (!clock) return;
+
+    const custom = settingsState.clockpos === "custom";
+    clock.style.cursor = custom ? "grab" : "";
+    clock.style.pointerEvents = custom ? "auto" : "";
+
+    if (!custom) {
+      clock.style.left = "";
+      clock.style.top = "";
+      return;
+    }
+
+    const saved = loadClockPos() || { left: 18, top: 14 };
+    clock.style.left = saved.left + "px";
+    clock.style.top = saved.top + "px";
+  }
+
+  function startClockDrag(e) {
+    if (settingsState.clockpos !== "custom") return;
+
+    const clock = e.currentTarget;
+    e.preventDefault();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = clock.getBoundingClientRect();
+
+    function move(ev) {
+      const maxLeft = Math.max(4, window.innerWidth - clock.offsetWidth - 4);
+      const maxTop = Math.max(4, window.innerHeight - clock.offsetHeight - 4);
+      const left = Math.min(Math.max(4, rect.left + ev.clientX - startX), maxLeft);
+      const top = Math.min(Math.max(4, rect.top + ev.clientY - startY), maxTop);
+
+      clock.style.left = Math.round(left) + "px";
+      clock.style.top = Math.round(top) + "px";
+    }
+
+    function up() {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+
+      try {
+        localStorage.setItem(clockPosKey, JSON.stringify({
+          left: parseInt(clock.style.left, 10) || 18,
+          top: parseInt(clock.style.top, 10) || 14
+        }));
+      } catch (err) {
+        /* ничего */
+      }
+    }
+
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
 
   function buildClock() {
     if (document.querySelector(".desktop-clock")) return;
@@ -282,6 +348,7 @@
     clock.className = "desktop-clock";
     clock.setAttribute("aria-hidden", "true");
     clock.innerHTML = '<span class="clock-time"></span><span class="clock-date"></span>';
+    clock.addEventListener("pointerdown", startClockDrag);
     document.body.appendChild(clock);
 
     function paint() {
@@ -295,6 +362,7 @@
     }
 
     paint();
+    applyClockPos();
     clockTimer = window.setInterval(paint, 15000);
   }
 
@@ -370,6 +438,16 @@
     document.body.classList.toggle("no-tooltips", settingsState.tooltips === false);
     document.body.classList.toggle("big-text", settingsState.bigtext === true);
     document.body.classList.toggle("no-clock", settingsState.clock === false);
+
+    ["tl", "tc", "tr", "bl", "bc", "br", "center", "custom"].forEach(function (pos) {
+      document.body.classList.toggle("clock-pos-" + pos, (settingsState.clockpos || "tr") === pos);
+    });
+
+    ["s", "m", "l", "xl"].forEach(function (size) {
+      document.body.classList.toggle("clock-size-" + size, (settingsState.clocksize || "m") === size);
+    });
+
+    applyClockPos();
     applyWallpaper();
   }
 
