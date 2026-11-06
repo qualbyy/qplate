@@ -123,7 +123,12 @@
         })
       },
       terminal: {
-        paths: clone(terminal.paths || {})
+        paths: clone(terminal.paths || {}),
+        fastfetch: {
+          ascii: terminal.ascii || "",
+          fetchTitle: terminal.fetchTitle || "",
+          rows: clone(Array.isArray(terminal.rows) ? terminal.rows : [])
+        }
       },
       windows: clone(Array.isArray(s.windows) ? s.windows : []),
       settings: clone(Array.isArray(s.settings) ? s.settings : []),
@@ -148,6 +153,15 @@
     if (!Array.isArray(d.browser.tabs)) d.browser.tabs = [];
     if (!d.terminal) d.terminal = { paths: {} };
     if (!d.terminal.paths) d.terminal.paths = {};
+    if (!d.terminal.fastfetch) {
+      const source = DATA.terminal || {};
+      d.terminal.fastfetch = {
+        ascii: source.ascii || "",
+        fetchTitle: source.fetchTitle || "",
+        rows: clone(Array.isArray(source.rows) ? source.rows : [])
+      };
+    }
+    if (!Array.isArray(d.terminal.fastfetch.rows)) d.terminal.fastfetch.rows = [];
     if (!Array.isArray(d.windows)) d.windows = clone(DATA.windows || []);
     if (!Array.isArray(d.settings)) d.settings = clone(DATA.settings || []);
     if (!d.theme) d.theme = clone(DATA.theme || {});
@@ -182,7 +196,12 @@
       pages: clone(draft.pdf.pages)
     });
     DATA.browser = Object.assign({}, DATA.browser, { tabs: clone(draft.browser.tabs) });
-    DATA.terminal = Object.assign({}, DATA.terminal, { paths: clone(draft.terminal.paths) });
+    DATA.terminal = Object.assign({}, DATA.terminal, {
+      paths: clone(draft.terminal.paths),
+      ascii: draft.terminal.fastfetch.ascii,
+      fetchTitle: draft.terminal.fastfetch.fetchTitle,
+      rows: clone(draft.terminal.fastfetch.rows)
+    });
     DATA.windows = clone(draft.windows);
     DATA.photos = clone(draft.photos);
     DATA.music = clone(draft.music);
@@ -775,6 +794,81 @@
     return card;
   }
 
+  function fastfetchCard() {
+    const ff = draft.terminal.fastfetch;
+    const card = el("div", "ed-card");
+    card.appendChild(el("div", "ed-card-title", "fastfetch в терминале"));
+    card.appendChild(el("div", "ed-hint", "картинка слева, строки справа. видно по команде fastfetch и all."));
+
+    card.appendChild(field("заголовок", ff.fetchTitle, function (value) {
+      ff.fetchTitle = value;
+    }));
+
+    card.appendChild(field("картинка (ascii)", ff.ascii, function (value) {
+      ff.ascii = value;
+    }, {
+      multiline: true,
+      rows: 6,
+      code: true,
+      hint: "пробелы сохраняются. можно загрузить txt-файл.",
+      pick: { accept: ".txt,text/plain", apply: function (value) { ff.ascii = value; } }
+    }));
+
+    const rowsWrap = el("div", "ed-field");
+    rowsWrap.appendChild(el("span", "ed-label", "строки"));
+    const list = el("div", "ed-list");
+
+    ff.rows.forEach(function (row, index) {
+      const line = el("div", "ed-link-row");
+
+      const key = el("input", "ed-input");
+      key.type = "text";
+      key.placeholder = "ключ";
+      key.value = row[0] || "";
+      key.addEventListener("input", function () {
+        row[0] = key.value;
+        queueSave();
+      });
+
+      const val = el("input", "ed-input");
+      val.type = "text";
+      val.placeholder = "значение";
+      val.value = row[1] || "";
+      val.addEventListener("input", function () {
+        row[1] = val.value;
+        queueSave();
+      });
+
+      const del = el("button", "ed-mini", "×");
+      del.type = "button";
+      del.title = "удалить строку";
+      del.addEventListener("click", function () {
+        ff.rows.splice(index, 1);
+        queueSave();
+        renderPanel();
+      });
+
+      line.appendChild(key);
+      line.appendChild(val);
+      line.appendChild(del);
+      list.appendChild(line);
+    });
+
+    rowsWrap.appendChild(list);
+
+    const add = el("button", "ed-add", "+ строка");
+    add.type = "button";
+    add.addEventListener("click", function () {
+      ff.rows.push(["ключ", "значение"]);
+      queueSave();
+      renderPanel();
+    });
+    rowsWrap.appendChild(add);
+    card.appendChild(rowsWrap);
+
+    return card;
+  }
+
   function terminalTab() {
     const wrap = el("div", "ed-card");
     wrap.style.background = "transparent";
@@ -782,6 +876,7 @@
     wrap.style.padding = "0";
 
     wrap.appendChild(el("div", "ed-hint", "каждая команда — кнопка в терминале и строка в help. «свой javascript-код» даёт полноценную мини-функцию."));
+    wrap.appendChild(fastfetchCard());
 
     const paths = draft.terminal.paths || (draft.terminal.paths = {});
     const ids = Object.keys(paths);
