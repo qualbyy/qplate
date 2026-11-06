@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="песочная сетка из кругов и линий">
+  <rect width="800" height="600" fill="#f2ead9"/>
+  <g fill="none" stroke="#c9a878" stroke-width="2">
+    <circle cx="200" cy="200" r="110"/>
+    <circle cx="200" cy="200" r="72"/>
+    <circle cx="600" cy="420" r="130"/>
+    <circle cx="600" cy="420" r="86"/>
+  </g>
+  <g fill="#825e2e">
+    <circle cx="200" cy="200" r="10"/>
+    <circle cx="600" cy="420" r="10"/>
+  </g>
+  <g stroke="#a07844" stroke-width="1.5" opacity="0.6">
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="400" y1="0" x2="400" y2="600"/>
+  </g>
+  <g fill="#d9b98a">
+    <rect x="640" y="90" width="80" height="80" rx="4"/>
+    <rect x="90" y="430" width="58" height="58" rx="4"/>
+  </g>
+</svg>

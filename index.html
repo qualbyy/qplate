@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>рабочий стол • скелетон</title>
+  <link rel="stylesheet" href="shell.css">
+  <link rel="stylesheet" href="apps.css">
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+  <!-- Сюда менеджер окон добавляет окна из data.js -->
+  <main class="desktop" id="desktop" aria-label="рабочий стол"></main>
+
+  <!-- Сюда менеджер окон добавляет иконки из data.js -->
+  <nav class="side-dock" id="dock" aria-label="приложения"></nav>
+
+  <script src="data.js"></script>
+  <script src="apps.js"></script>
+  <script src="shell.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>

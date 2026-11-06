@@ -1,0 +1,673 @@
+/* ============================================================
+   shell.css — оболочка рабочего стола: тема, окна, док
+   Меняй цвета и радиусы в :root, больше ничего не нужно.
+   ============================================================ */
+
+:root {
+  --bg: #f5f2eb;
+  --term-bg: #fcfbf9;
+  --header-bg: #ece6da;
+  --border: #dfd7c8;
+  --border-dark: #cec2ae;
+
+  --text: #141210;
+  --text-dim: #3b352d;
+
+  --sand-accent: #a07844;
+  --sand-dark: #825e2e;
+  --sand-badge: #eee7db;
+  --prompt-user: #8c6838;
+  --prompt-path: #6b6357;
+
+  /* Плавный переход при смене ключевого цвета */
+  --ink: #141210;
+
+  /* Производные от ключевого цвета: обновляются в shell.js */
+  --accent-rgb: 160, 120, 68;
+  --accent-dark: #6d4d24;
+  --on-accent: #ffffff;
+  --dock-bg: rgba(236, 230, 218, 0.88);
+  --dock-hover-bg: #ffffff;
+  --surface-soft: #f8f6f0;
+  --surface-inset: #fbf9f5;
+  --surface-deep: #f4eee3;
+  --surface-mute: #ede6da;
+  --surface-paper: #fffdf8;
+  --hover-strong: #e4dcce;
+  --photo-overlay: rgba(47, 42, 36, 0.82);
+
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --font-serif: Georgia, "Times New Roman", serif;
+
+  /* Скругление дока: чуть меньше, чем в старом био */
+  --dock-radius: 20px;
+  --dock-icon-radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  transition: background-color 0.3s ease;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  text-transform: lowercase;
+  position: relative;
+}
+
+button,
+input {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.desktop {
+  position: absolute;
+  inset: 0;
+}
+
+/* ------------------------------------------------------------
+   Окно
+   ------------------------------------------------------------ */
+
+.window {
+  position: absolute;
+  background: var(--term-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(var(--accent-rgb), 0.12), 0 3px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+  max-width: 92vw;
+  transform-origin: 100% 50%;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, filter 0.3s ease;
+  will-change: transform, opacity, left, top;
+}
+
+.window.is-focused {
+  z-index: 100;
+  border-color: var(--border-dark);
+  box-shadow: 0 18px 48px rgba(var(--accent-rgb), 0.18), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Сворачивание «джином» к правому доку */
+.window.is-minimized {
+  transform: translate3d(320px, 0, -200px) scale(0.04, 0.2) skewY(6deg);
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(4px);
+}
+
+/* Закрытие с эффектом выключения старого телевизора */
+.window.is-closing {
+  animation: crtTvOff 0.38s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes crtTvOff {
+  0% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.04, 0.008);
+    filter: brightness(1.8) contrast(1.5);
+    opacity: 0.95;
+  }
+  75% {
+    transform: scale(0.15, 0.008);
+    filter: brightness(2.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0, 0);
+    filter: brightness(3);
+    opacity: 0;
+  }
+}
+
+.window[data-app="browser"] { height: min(620px, 84vh); }
+.window[data-app="files"] { height: min(560px, 80vh); }
+.window[data-app="photos"] { height: min(600px, 82vh); }
+.window[data-app="pdf"] { height: min(640px, 84vh); }
+.window[data-app="notes"] { max-height: 84vh; }
+
+/* ------------------------------------------------------------
+   Шапка окна
+   ------------------------------------------------------------ */
+
+.window-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 12px 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  flex: none;
+}
+
+.window-header:active {
+  cursor: grabbing;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.win-btn {
+  width: 19px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.win-btn::before {
+  content: "";
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.win-btn:hover::before,
+.win-btn:focus-visible::before {
+  transform: scale(1.18);
+  filter: brightness(0.94);
+}
+
+.win-btn:focus-visible {
+  outline: 1px dotted var(--sand-accent);
+  outline-offset: -1px;
+}
+
+.btn-close::before { background: #dca394; }
+.btn-min::before { background: #e0cb8f; }
+.btn-max::before { background: #abc699; }
+
+.window-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.window-spacer {
+  width: 57px;
+  flex: none;
+}
+
+/* ------------------------------------------------------------
+   Тело окна
+   ------------------------------------------------------------ */
+
+.window-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.window-body::-webkit-scrollbar,
+.app-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.window-body::-webkit-scrollbar-thumb,
+.app-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 3px;
+}
+
+.window-body::-webkit-scrollbar-track,
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------
+   Док
+   ------------------------------------------------------------ */
+
+.side-dock {
+  position: fixed;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--dock-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--dock-radius);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.12);
+  z-index: 999;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dock-app {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--dock-icon-radius);
+  background: var(--term-bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+  flex: none;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+              background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dock-app:hover,
+.dock-app:focus-visible {
+  transform: scale(1.12) translateX(-3px);
+  background: var(--dock-hover-bg);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.18);
+  outline: none;
+}
+
+.dock-app:focus-visible {
+  border-color: var(--sand-accent);
+}
+
+.dock-app-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--sand-dark);
+  line-height: 1;
+}
+
+.dock-app-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.dock-app-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sand-accent);
+  position: absolute;
+  bottom: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dock-app.open .dock-app-dot {
+  opacity: 1;
+}
+
+.dock-tooltip {
+  position: absolute;
+  right: 56px;
+  top: 50%;
+  transform: translate(6px, -50%);
+  background: var(--sand-dark);
+  color: var(--on-accent);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  font-family: var(--font-mono);
+  z-index: 5;
+}
+
+.dock-app:hover .dock-tooltip,
+.dock-app:focus-visible .dock-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+body.no-tooltips .dock-tooltip {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   Настройки: крупный текст и выключенные анимации
+   ------------------------------------------------------------ */
+
+body.big-text {
+  font-size: 15px;
+}
+
+body.big-text .window-title {
+  font-size: 13px;
+}
+
+body.big-text .window-body {
+  font-size: 15px;
+}
+
+body.big-text .browser-view,
+body.big-text .pdf-sheet {
+  font-size: 15.5px;
+}
+
+body.big-text .cmd-input {
+  font-size: 15px;
+}
+
+body.no-motion .window,
+body.no-motion .dock-app,
+body.no-motion .dock-tooltip {
+  transition: none !important;
+}
+
+body.no-motion .window.is-closing {
+  animation: none !important;
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------
+   Низкие экраны: док сжимается, чтобы все иконки влезли
+   ------------------------------------------------------------ */
+
+@media (max-height: 700px) and (min-width: 769px) {
+  .side-dock {
+    gap: 8px;
+    padding: 7px 5px;
+  }
+
+  .dock-app {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-height: 560px) and (min-width: 769px) {
+  .side-dock {
+    gap: 6px;
+    padding: 6px 5px;
+  }
+
+  .dock-app {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dock-app-icon {
+    font-size: 11px;
+  }
+
+  .dock-tooltip {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------
+   Обои
+   ------------------------------------------------------------ */
+
+.desktop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-position: center;
+  background-repeat: repeat;
+}
+
+body[data-wallpaper="dots"] .desktop::before {
+  background-image: radial-gradient(rgba(var(--accent-rgb), 0.32) 1px, transparent 1.2px);
+  background-size: 20px 20px;
+}
+
+body[data-wallpaper="grid"] .desktop::before {
+  background-image:
+    linear-gradient(rgba(var(--accent-rgb), 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--accent-rgb), 0.14) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+body[data-wallpaper="waves"] .desktop::before {
+  background-image: repeating-linear-gradient(115deg, transparent 0 18px, rgba(var(--accent-rgb), 0.1) 18px 19px);
+}
+
+body[data-wallpaper="paper"] .desktop::before {
+  background-image: repeating-linear-gradient(0deg, rgba(var(--accent-rgb), 0.06) 0 1px, transparent 1px 4px);
+}
+
+body.has-wallpaper .desktop::before {
+  background-image: var(--wallpaper-image);
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+body.theme-dark.has-wallpaper .desktop::before {
+  filter: brightness(0.55);
+}
+
+/* ------------------------------------------------------------
+   Часы
+   ------------------------------------------------------------ */
+
+.desktop-clock {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.clock-time {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--sand-dark);
+}
+
+.clock-date {
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+body.no-clock .desktop-clock {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   Тёмная тема
+   ------------------------------------------------------------ */
+
+body.theme-dark .window {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-dark .window.is-focused {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+body.theme-dark .dock-tooltip {
+  background: var(--surface-mute);
+  color: var(--text);
+}
+
+body.theme-dark .side-dock {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------
+   Телефон
+   ------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+  body {
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .window,
+  .window[data-app="browser"],
+  .window[data-app="files"],
+  .window[data-app="photos"],
+  .window[data-app="pdf"] {
+    position: absolute !important;
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    left: 8px !important;
+    top: 8px !important;
+    height: calc(100dvh - 86px) !important;
+    max-height: calc(100dvh - 86px) !important;
+    transform-origin: 50% 100%;
+    transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s ease !important;
+  }
+
+  .window.is-minimized {
+    transform: translate3d(0, 150px, -80px) scale(0.2, 0.04);
+    opacity: 0;
+    filter: blur(4px);
+    pointer-events: none;
+    display: none !important;
+  }
+
+  .window.is-closing {
+    display: flex !important;
+  }
+
+  .window-header {
+    cursor: default;
+    min-height: 34px;
+    padding: 4px 10px;
+  }
+
+  .window-title {
+    font-size: 11.5px;
+  }
+
+  .window-spacer {
+    width: 57px;
+  }
+
+  .side-dock {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: 10px;
+    transform: translateX(-50%);
+    flex-direction: row;
+    padding: 5px 7px;
+    border-radius: 16px;
+    gap: 6px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+    z-index: 9999;
+  }
+
+  .side-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-app {
+    width: 36px;
+    height: 36px;
+    flex: none;
+  }
+
+  .dock-app-icon {
+    font-size: 11.5px;
+  }
+
+  .dock-app:hover,
+  .dock-app:focus-visible {
+    transform: none;
+    box-shadow: none;
+    background: var(--term-bg);
+  }
+
+  .dock-tooltip {
+    display: none;
+  }
+
+  .desktop-clock {
+    display: none;
+  }
+
+  .window-body {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ------------------------------------------------------------
+   Кому мало движения
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .window,
+  .dock-app,
+  .dock-tooltip {
+    transition: none !important;
+  }
+
+  .window.is-closing {
+    animation: none !important;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="абстрактный песочный пейзаж">
+  <rect width="800" height="600" fill="#efe4d1"/>
+  <circle cx="560" cy="190" r="92" fill="#d9b98a"/>
+  <path d="M0 430 C140 360 260 400 380 380 C520 356 640 300 800 350 L800 600 L0 600 Z" fill="#c9a878"/>
+  <path d="M0 500 C160 440 300 480 460 450 C600 424 700 460 800 440 L800 600 L0 600 Z" fill="#a07844"/>
+  <g stroke="#825e2e" stroke-width="2" opacity="0.35">
+    <line x1="80" y1="470" x2="190" y2="470"/>
+    <line x1="140" y1="492" x2="250" y2="492"/>
+    <line x1="600" y1="470" x2="710" y2="470"/>
+  </g>
+</svg>

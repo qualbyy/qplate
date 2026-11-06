@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="обложка демо-альбома">
+  <rect width="600" height="600" fill="#825e2e"/>
+  <circle cx="300" cy="300" r="190" fill="none" stroke="#efe4d1" stroke-width="2" opacity="0.55"/>
+  <circle cx="300" cy="300" r="140" fill="none" stroke="#efe4d1" stroke-width="2" opacity="0.8"/>
+  <circle cx="300" cy="300" r="70" fill="#d9b98a"/>
+  <g stroke="#efe4d1" stroke-width="2" opacity="0.5">
+    <line x1="80" y1="480" x2="520" y2="480"/>
+    <line x1="140" y1="510" x2="460" y2="510"/>
+  </g>
+  <g fill="#efe4d1" font-family="monospace" font-size="14" opacity="0.8">
+    <text x="64" y="86">демо-альбом</text>
+    <text x="64" y="110">you</text>
+  </g>
+</svg>

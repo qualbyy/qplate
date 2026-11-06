@@ -1,0 +1,913 @@
+/* ============================================================
+   shell.js — менеджер окон и дока
+   Собирает окна из DATA.windows, не требует сборки.
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  const desktop = document.getElementById("desktop");
+  const dock = document.getElementById("dock");
+
+  if (!window.DATA || !Array.isArray(window.DATA.windows)) {
+    desktop.innerHTML = '<p style="padding:24px;color:#7a7164;font-family:monospace;">не загрузился data.js — проверь, что он лежит рядом с index.html.</p>';
+    return;
+  }
+
+  const DATA = window.DATA;
+  const renderers = window.APP_RENDERERS || {};
+  const settingsKey = "desktop-settings-v1";
+  const themeKey = "desktop-accent-v1";
+  const positionKey = "desktop-window-positions-v1";
+  const wallpaperKey = "desktop-wallpaper-v1";
+
+  const windows = new Map();
+  const configs = new Map();
+  const dockButtons = new Map();
+  const lifecycles = new Map();
+  const closeTimers = new Map();
+  const state = {};
+
+  let highestZ = 10;
+  let lastFocused = null;
+  let dragState = null;
+  let settingsState = {};
+  const themeState = { accent: "", color: "" };
+
+  const isMobile = () => window.innerWidth <= 768;
+  const motionOff = () => document.body.classList.contains("no-motion");
+
+  /* ---------- Настройки ---------- */
+
+  function loadSettings() {
+    const result = {};
+
+    (DATA.settings || []).forEach(function (item) {
+      result[item.id] = item.value;
+    });
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(settingsKey) || "null");
+      if (saved && typeof saved === "object") {
+        Object.keys(result).forEach(function (key) {
+          if (saved[key] !== undefined && typeof saved[key] === typeof result[key]) {
+            result[key] = saved[key];
+          }
+        });
+      }
+    } catch (err) {
+      /* localStorage может быть запрещён — работаем без сохранения */
+    }
+
+    return result;
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(settingsKey, JSON.stringify(settingsState));
+    } catch (err) {
+      /* молча живём дальше */
+    }
+  }
+
+  /* ---------- Ключевой цвет ---------- */
+
+  function hexToRgb(hex) {
+    const h = String(hex || "").replace("#", "");
+    const full = h.length === 3 ? h.split("").map(function (c) { return c + c; }).join("") : h;
+    const n = parseInt(full, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  }
+
+  /* Смешивает цвет с белым: 0 — цвет, 1 — белый. */
+  function tint(rgb, amount) {
+    const mix = Math.max(0, Math.min(1, amount));
+    return "rgb(" + [rgb.r, rgb.g, rgb.b].map(function (v) {
+      return Math.round(v + (255 - v) * mix);
+    }).join(" ") + ")";
+  }
+
+  /* Смешивает цвет с белым и добавляет прозрачность. */
+  function tintAlpha(rgb, amount, alpha) {
+    const mix = Math.max(0, Math.min(1, amount));
+    const channels = [rgb.r, rgb.g, rgb.b].map(function (v) {
+      return Math.round(v + (255 - v) * mix);
+    });
+    return "rgba(" + channels.join(", ") + ", " + alpha + ")";
+  }
+
+  /* Смешивает цвет с чёрным: 0 — цвет, 1 — чёрный. */
+  function shade(rgb, amount) {
+    const mix = Math.max(0, Math.min(1, amount));
+    return "rgb(" + [rgb.r, rgb.g, rgb.b].map(function (v) {
+      return Math.round(v * (1 - mix));
+    }).join(" ") + ")";
+  }
+
+  /* Затемняет цвет и добавляет прозрачность. */
+  function shadeAlpha(rgb, amount, alpha) {
+    const mix = Math.max(0, Math.min(1, amount));
+    const channels = [rgb.r, rgb.g, rgb.b].map(function (v) {
+      return Math.round(v * (1 - mix));
+    });
+    return "rgba(" + channels.join(", ") + ", " + alpha + ")";
+  }
+
+  /* Читаемый цвет текста на ключевом цвете. */
+  function onAccent(rgb) {
+    const light = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+    return light > 170 ? "#1a1714" : "#ffffff";
+  }
+
+  function themeColor(value) {
+    const theme = DATA.theme || {};
+    const preset = (theme.presets || []).filter(function (item) {
+      return item.id === value;
+    })[0];
+
+    if (!value) {
+      let savedColor = "";
+      try {
+        savedColor = localStorage.getItem(themeKey) || "";
+      } catch (err) {
+        savedColor = "";
+      }
+
+      if (/^#[0-9a-f]{6}$/i.test(savedColor)) {
+        themeState.accent = "";
+        themeState.color = savedColor;
+        return savedColor;
+      }
+
+      themeState.accent = theme.accent || (theme.presets && theme.presets[0] && theme.presets[0].id) || "sand";
+      return themeColor(themeState.accent);
+    }
+
+    if (preset) {
+      themeState.color = preset.color;
+      return preset.color;
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(String(value || ""))) {
+      themeState.color = value;
+      return value;
+    }
+
+    const saved = localStorage.getItem(themeKey);
+    if (saved && /^#[0-9a-f]{6}$/i.test(saved)) {
+      themeState.accent = saved;
+      themeState.color = saved;
+      return saved;
+    }
+
+    const first = (theme.presets || [])[0];
+    themeState.accent = first ? first.id : "sand";
+    themeState.color = first ? first.color : "#a07844";
+    return themeState.color;
+  }
+
+  const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function isDark() {
+    const mode = settingsState.theme || "light";
+    if (mode === "dark") return true;
+    if (mode === "auto") return !!(darkQuery && darkQuery.matches);
+    return false;
+  }
+
+  function applyTheme() {
+    const rgb = hexToRgb(themeState.color);
+    const root = document.documentElement.style;
+    const dark = isDark();
+    const max = Math.max(rgb.r, rgb.g, rgb.b);
+    const min = Math.min(rgb.r, rgb.g, rgb.b);
+    const delta = max - min;
+    let accentHue = 0;
+    if (delta) {
+      accentHue = max === rgb.r ? ((rgb.g - rgb.b) / delta) % 6 : max === rgb.g ? (rgb.b - rgb.r) / delta + 2 : (rgb.r - rgb.g) / delta + 4;
+      accentHue *= 60;
+      if (accentHue < 0) accentHue += 360;
+    }
+    root.setProperty("--accent-hue", String(accentHue));
+
+    root.setProperty("--accent", themeState.color);
+    root.setProperty("--accent-deep", tint(rgb, 0.2));
+    root.setProperty("--sand-accent", themeState.color);
+    root.setProperty("--accent-rgb", rgb.r + ", " + rgb.g + ", " + rgb.b);
+    root.setProperty("--accent-dark", shade(rgb, 0.32));
+    root.setProperty("--on-accent", onAccent(rgb));
+    root.setProperty("--photo-overlay", shadeAlpha(rgb, 0.55, 0.82));
+
+    if (dark) {
+      root.setProperty("--bg", shade(rgb, 0.84));
+      root.setProperty("--term-bg", shade(rgb, 0.9));
+      root.setProperty("--header-bg", shade(rgb, 0.74));
+      root.setProperty("--border", shade(rgb, 0.62));
+      root.setProperty("--border-dark", shade(rgb, 0.48));
+      root.setProperty("--text", tint(rgb, 0.88));
+      root.setProperty("--text-dim", tint(rgb, 0.62));
+      root.setProperty("--ink", tint(rgb, 0.9));
+      root.setProperty("--sand-dark", tint(rgb, 0.42));
+      root.setProperty("--sand-badge", shade(rgb, 0.7));
+      root.setProperty("--prompt-user", tint(rgb, 0.5));
+      root.setProperty("--prompt-path", tint(rgb, 0.62));
+      root.setProperty("--dock-bg", shadeAlpha(rgb, 0.68, 0.9));
+      root.setProperty("--dock-hover-bg", shade(rgb, 0.86));
+      root.setProperty("--surface-soft", shade(rgb, 0.78));
+      root.setProperty("--surface-inset", shade(rgb, 0.82));
+      root.setProperty("--surface-deep", shade(rgb, 0.72));
+      root.setProperty("--surface-mute", shade(rgb, 0.68));
+      root.setProperty("--surface-paper", shade(rgb, 0.76));
+      root.setProperty("--hover-strong", shade(rgb, 0.6));
+    } else {
+      root.setProperty("--bg", tint(rgb, 0.93));
+      root.setProperty("--term-bg", tint(rgb, 0.965));
+      root.setProperty("--header-bg", tint(rgb, 0.87));
+      root.setProperty("--border", tint(rgb, 0.78));
+      root.setProperty("--border-dark", tint(rgb, 0.66));
+      root.setProperty("--text", "#141210");
+      root.setProperty("--text-dim", "#3b352d");
+      root.setProperty("--ink", "#141210");
+      root.setProperty("--sand-dark", shade(rgb, 0.2));
+      root.setProperty("--sand-badge", tint(rgb, 0.88));
+      root.setProperty("--prompt-user", tint(rgb, 0.38));
+      root.setProperty("--prompt-path", tint(rgb, 0.55));
+      root.setProperty("--dock-bg", tintAlpha(rgb, 0.87, 0.88));
+      root.setProperty("--dock-hover-bg", tint(rgb, 0.985));
+      root.setProperty("--surface-soft", tint(rgb, 0.96));
+      root.setProperty("--surface-inset", tint(rgb, 0.975));
+      root.setProperty("--surface-deep", tint(rgb, 0.94));
+      root.setProperty("--surface-mute", tint(rgb, 0.9));
+      root.setProperty("--surface-paper", tint(rgb, 0.985));
+      root.setProperty("--hover-strong", tint(rgb, 0.865));
+    }
+
+    document.body.classList.toggle("theme-dark", dark);
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    const meta = document.querySelector('meta[name="color-scheme"]');
+    if (meta) meta.setAttribute("content", dark ? "dark" : "light");
+
+    try {
+      localStorage.setItem(themeKey, themeState.color);
+    } catch (err) {
+      /* ничего */
+    }
+  }
+
+  /* ---------- Обои ---------- */
+
+  function applyWallpaper() {
+    const wall = settingsState.wallpaper || "none";
+    let image = "";
+
+    try {
+      image = localStorage.getItem(wallpaperKey) || "";
+    } catch (err) {
+      image = "";
+    }
+
+    document.body.dataset.wallpaper = wall;
+    document.documentElement.style.setProperty("--wallpaper-image", image ? "url(" + image + ")" : "none");
+    document.body.classList.toggle("has-wallpaper", wall === "custom" && !!image);
+  }
+
+  /* ---------- Часы ---------- */
+
+  let clockTimer = null;
+
+  function buildClock() {
+    if (document.querySelector(".desktop-clock")) return;
+
+    const clock = document.createElement("div");
+    clock.className = "desktop-clock";
+    clock.setAttribute("aria-hidden", "true");
+    clock.innerHTML = '<span class="clock-time"></span><span class="clock-date"></span>';
+    document.body.appendChild(clock);
+
+    function paint() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const date = now.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+
+      clock.querySelector(".clock-time").textContent = hours + ":" + minutes;
+      clock.querySelector(".clock-date").textContent = date;
+    }
+
+    paint();
+    clockTimer = window.setInterval(paint, 15000);
+  }
+
+  /* ---------- Позиции окон ---------- */
+
+  function loadPositions() {
+    try {
+      return JSON.parse(localStorage.getItem(positionKey) || "{}") || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function savePosition(id) {
+    if (!settingsState.positions || isMobile()) return;
+
+    const win = windows.get(id);
+    if (!win) return;
+
+    const all = loadPositions();
+    all[id] = {
+      left: parseInt(win.style.left, 10) || 10,
+      top: parseInt(win.style.top, 10) || 10
+    };
+
+    try {
+      localStorage.setItem(positionKey, JSON.stringify(all));
+    } catch (err) {
+      /* ничего */
+    }
+  }
+
+  function clearPositions() {
+    try {
+      localStorage.removeItem(positionKey);
+    } catch (err) {
+      /* ничего */
+    }
+  }
+
+  function restorePosition(id) {
+    if (!settingsState.positions || isMobile()) return false;
+
+    const saved = loadPositions()[id];
+    const win = windows.get(id);
+    if (!saved || !win) return false;
+
+    const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
+    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+
+    win.style.left = Math.min(Math.max(10, saved.left || 10), maxLeft) + "px";
+    win.style.top = Math.min(Math.max(10, saved.top || 10), maxTop) + "px";
+    win.dataset.positioned = "1";
+    return true;
+  }
+
+  function applySettings() {
+    document.body.classList.toggle("no-motion", settingsState.motion === false);
+    document.body.classList.toggle("no-tooltips", settingsState.tooltips === false);
+    document.body.classList.toggle("big-text", settingsState.bigtext === true);
+    document.body.classList.toggle("no-clock", settingsState.clock === false);
+    applyWallpaper();
+  }
+
+  function applySetting(id, value) {
+    if (id === "accent") {
+      const next = typeof value === "string" ? value : "";
+      const theme = DATA.theme || {};
+      const locked = Array.isArray(theme.locked) ? theme.locked : [];
+      const custom = next.charAt(0) === "#";
+      if ((custom && theme.lockedCustom) || (!custom && locked.indexOf(next) >= 0)) return;
+      themeColor(next);
+      applyTheme();
+      return;
+    }
+
+    const item = (DATA.settings || []).filter(function (setting) {
+      return setting.id === id;
+    })[0];
+
+    if (item && Array.isArray(item.locked) && item.locked.indexOf(String(value)) >= 0) return;
+
+    const isToggle = !item || item.type === "toggle" || item.type === undefined;
+    settingsState[id] = isToggle ? !!value : String(value);
+
+    applySettings();
+    saveSettings();
+
+    if (id === "theme") applyTheme();
+    if (id === "positions" && settingsState.positions === false) clearPositions();
+  }
+
+  /* ---------- Сборка окна ---------- */
+
+  function paintWindow(cfg) {
+    const win = windows.get(cfg.id);
+    if (!win) return;
+
+    win.querySelector(".window-title").textContent = cfg.title;
+    win.setAttribute("aria-label", cfg.title);
+    win.style.width = (cfg.width || 620) + "px";
+
+    const body = win.querySelector(".window-body");
+    body.innerHTML = "";
+
+    const renderer = renderers[cfg.type] || renderers.__fallback;
+
+    if (renderer && typeof renderer.render === "function") {
+      const lifecycle = renderer.render(body, cfg, ctx);
+      lifecycles.set(cfg.id, lifecycle || {});
+    } else {
+      body.innerHTML = '<p class="empty-note">для этого окна пока нет отрисовщика.</p>';
+      lifecycles.set(cfg.id, {});
+    }
+
+    if (state[cfg.id]) {
+      const lifecycle = lifecycles.get(cfg.id);
+      if (lifecycle && typeof lifecycle.onOpen === "function") lifecycle.onOpen();
+    }
+  }
+
+  function buildWindow(cfg) {
+    const win = document.createElement("section");
+    win.className = "window";
+    win.id = "win-" + cfg.id;
+    win.dataset.app = cfg.id;
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", cfg.title);
+    win.style.width = (cfg.width || 620) + "px";
+
+    if (!cfg.open) {
+      win.classList.add("is-minimized");
+      win.setAttribute("aria-hidden", "true");
+    }
+
+    win.innerHTML = [
+      '<header class="window-header">',
+      '  <div class="window-controls">',
+      '    <button type="button" class="win-btn btn-close" aria-label="закрыть" title="закрыть"></button>',
+      '    <button type="button" class="win-btn btn-min" aria-label="свернуть" title="свернуть"></button>',
+      '    <button type="button" class="win-btn btn-max" aria-label="центрировать" title="центрировать"></button>',
+      '  </div>',
+      '  <h2 class="window-title"></h2>',
+      '  <div class="window-spacer" aria-hidden="true"></div>',
+      '</header>',
+      '<div class="window-body"></div>'
+    ].join("");
+
+    win.querySelector(".window-title").textContent = cfg.title;
+
+    win.querySelector(".btn-close").addEventListener("click", function (e) {
+      e.stopPropagation();
+      closeWindow(cfg.id);
+    });
+
+    win.querySelector(".btn-min").addEventListener("click", function (e) {
+      e.stopPropagation();
+      minimizeWindow(cfg.id);
+    });
+
+    win.querySelector(".btn-max").addEventListener("click", function (e) {
+      e.stopPropagation();
+      centerAndMark(cfg.id);
+    });
+
+    const header = win.querySelector(".window-header");
+
+    header.addEventListener("pointerdown", function (e) {
+      startDrag(e, cfg.id);
+    });
+
+    header.addEventListener("dblclick", function (e) {
+      if (e.target.closest("button")) return;
+      centerAndMark(cfg.id);
+    });
+
+    win.addEventListener("pointerdown", function () {
+      focusWindow(cfg.id);
+    });
+
+    desktop.appendChild(win);
+    windows.set(cfg.id, win);
+    configs.set(cfg.id, cfg);
+    state[cfg.id] = false;
+    paintWindow(cfg);
+
+    return win;
+  }
+
+  /* ---------- Док ---------- */
+
+  function createDockButton(cfg) {
+    const old = dockButtons.get(cfg.id);
+    if (old) old.remove();
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dock-app";
+    btn.id = "dock-" + cfg.id;
+    btn.setAttribute("aria-label", cfg.label);
+    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-controls", "win-" + cfg.id);
+    btn.innerHTML = [
+      '<span class="dock-app-icon" aria-hidden="true"></span>',
+      '<span class="dock-app-dot" aria-hidden="true"></span>',
+      '<span class="dock-tooltip" aria-hidden="true"></span>'
+    ].join("");
+
+    const icon = btn.querySelector(".dock-app-icon");
+    icon.innerHTML = (DATA.icons || {})[cfg.iconKey] || "";
+    btn.querySelector(".dock-tooltip").textContent = cfg.label;
+
+    btn.addEventListener("click", function () {
+      toggleWindow(cfg.id);
+    });
+
+    if (state[cfg.id]) {
+      btn.classList.add("open");
+      btn.setAttribute("aria-pressed", "true");
+    }
+
+    dock.appendChild(btn);
+    dockButtons.set(cfg.id, btn);
+  }
+
+  function buildDock() {
+    DATA.windows.forEach(createDockButton);
+  }
+
+  function removeWindow(id) {
+    const win = windows.get(id);
+    const btn = dockButtons.get(id);
+    const life = lifecycles.get(id);
+
+    if (life && typeof life.onDestroy === "function") life.onDestroy();
+
+    clearTimeout(closeTimers.get(id));
+    closeTimers.delete(id);
+    lifecycles.delete(id);
+    windows.delete(id);
+    configs.delete(id);
+    dockButtons.delete(id);
+    delete state[id];
+
+    if (win) win.remove();
+    if (btn) btn.remove();
+
+    const all = loadPositions();
+    if (all[id]) {
+      delete all[id];
+      try {
+        localStorage.setItem(positionKey, JSON.stringify(all));
+      } catch (err) {
+        /* ничего */
+      }
+    }
+  }
+
+  function sync() {
+    const wanted = {};
+
+    DATA.windows.forEach(function (cfg) {
+      wanted[cfg.id] = true;
+    });
+
+    Array.from(windows.keys()).forEach(function (id) {
+      if (!wanted[id]) removeWindow(id);
+    });
+
+    DATA.windows.forEach(function (cfg) {
+      if (windows.has(cfg.id)) {
+        configs.set(cfg.id, cfg);
+        paintWindow(cfg);
+      } else {
+        buildWindow(cfg);
+      }
+      createDockButton(cfg);
+    });
+  }
+
+  function updateDock(id, open) {
+    const btn = dockButtons.get(id);
+    if (!btn) return;
+    btn.classList.toggle("open", open);
+    btn.setAttribute("aria-pressed", open ? "true" : "false");
+  }
+
+  /* ---------- Открытие, закрытие, фокус ---------- */
+
+  function openWindow(id) {
+    const win = windows.get(id);
+    if (!win) return;
+
+    if (isMobile()) {
+      DATA.windows.forEach(function (other) {
+        if (other.id !== id && state[other.id]) hideInstant(other.id);
+      });
+    }
+
+    clearTimeout(closeTimers.get(id));
+    closeTimers.delete(id);
+
+    state[id] = true;
+    win.classList.remove("is-minimized", "is-closing");
+    win.removeAttribute("aria-hidden");
+    updateDock(id, true);
+
+    if (!win.dataset.positioned) {
+      if (!restorePosition(id)) positionNew(id);
+      win.dataset.positioned = "1";
+    }
+
+    focusWindow(id);
+
+    const lifecycle = lifecycles.get(id);
+    if (lifecycle && typeof lifecycle.onOpen === "function") lifecycle.onOpen();
+  }
+
+  function hideInstant(id) {
+    if (!state[id]) return;
+
+    const win = windows.get(id);
+    state[id] = false;
+
+    clearTimeout(closeTimers.get(id));
+    closeTimers.delete(id);
+
+    win.classList.remove("is-closing");
+    win.classList.add("is-minimized");
+    win.setAttribute("aria-hidden", "true");
+    updateDock(id, false);
+
+    const lifecycle = lifecycles.get(id);
+    if (lifecycle && typeof lifecycle.onHide === "function") lifecycle.onHide();
+  }
+
+  function minimizeWindow(id) {
+    hideInstant(id);
+  }
+
+  function closeWindow(id) {
+    if (!state[id]) return;
+
+    const win = windows.get(id);
+    state[id] = false;
+    updateDock(id, false);
+    win.classList.remove("is-minimized");
+    win.classList.add("is-closing");
+
+    const lifecycle = lifecycles.get(id);
+    if (lifecycle && typeof lifecycle.onHide === "function") lifecycle.onHide();
+
+    clearTimeout(closeTimers.get(id));
+
+    const delay = motionOff() ? 0 : 380;
+    const timer = window.setTimeout(function () {
+      win.classList.remove("is-closing");
+      win.classList.add("is-minimized");
+      win.setAttribute("aria-hidden", "true");
+      closeTimers.delete(id);
+    }, delay);
+
+    closeTimers.set(id, timer);
+  }
+
+  function toggleWindow(id) {
+    if (state[id]) {
+      minimizeWindow(id);
+    } else {
+      openWindow(id);
+    }
+  }
+
+  function focusWindow(id) {
+    const win = windows.get(id);
+    if (!win) return;
+
+    highestZ += 2;
+    win.style.zIndex = String(highestZ);
+
+    windows.forEach(function (other) {
+      other.classList.remove("is-focused");
+    });
+
+    win.classList.add("is-focused");
+    lastFocused = id;
+  }
+
+  /* ---------- Позиция ---------- */
+
+  function centerWindow(id) {
+    const win = windows.get(id);
+    if (!win || isMobile()) return;
+
+    const w = win.offsetWidth || parseInt(win.style.width, 10) || 600;
+    const h = win.offsetHeight || 360;
+
+    const left = Math.max(10, Math.round((window.innerWidth - w) / 2));
+    const top = Math.max(10, Math.round((window.innerHeight - h) / 2));
+
+    win.style.left = left + "px";
+    win.style.top = top + "px";
+  }
+
+  function centerAndMark(id) {
+    centerWindow(id);
+    const win = windows.get(id);
+    if (win) {
+      win.dataset.positioned = "1";
+      savePosition(id);
+    }
+  }
+
+  function positionNew(id) {
+    if (isMobile()) return;
+
+    const win = windows.get(id);
+    if (!win) return;
+
+    centerWindow(id);
+
+    let left = parseInt(win.style.left, 10) || 10;
+    let top = parseInt(win.style.top, 10) || 10;
+
+    const others = Array.prototype.slice.call(
+      desktop.querySelectorAll(".window:not(.is-minimized)")
+    ).filter(function (other) {
+      return other !== win && !other.classList.contains("is-closing");
+    });
+
+    let tries = 0;
+    while (tries < 6 && others.some(function (other) {
+      return Math.abs(other.offsetLeft - left) < 24 && Math.abs(other.offsetTop - top) < 24;
+    })) {
+      left += 26;
+      top += 26;
+      tries += 1;
+    }
+
+    const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
+    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+
+    win.style.left = Math.min(left, maxLeft) + "px";
+    win.style.top = Math.min(top, maxTop) + "px";
+  }
+
+  function clampOpenWindows() {
+    if (isMobile()) return;
+
+    desktop.querySelectorAll(".window:not(.is-minimized)").forEach(function (win) {
+      const left = parseInt(win.style.left, 10) || 10;
+      const top = parseInt(win.style.top, 10) || 10;
+      const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
+      const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+
+      if (left > maxLeft) win.style.left = maxLeft + "px";
+      if (top > maxTop) win.style.top = maxTop + "px";
+      if (left < 10) win.style.left = "10px";
+      if (top < 10) win.style.top = "10px";
+    });
+  }
+
+  /* ---------- Перетаскивание ---------- */
+
+  function startDrag(e, id) {
+    if (isMobile() || e.button !== 0) return;
+    if (e.target.closest("button, a, input, textarea, select")) return;
+
+    const win = windows.get(id);
+    if (!win) return;
+
+    focusWindow(id);
+
+    dragState = {
+      win: win,
+      x: e.clientX,
+      y: e.clientY,
+      left: win.offsetLeft,
+      top: win.offsetTop
+    };
+
+    document.addEventListener("pointermove", onDragMove);
+    document.addEventListener("pointerup", endDrag);
+    document.addEventListener("pointercancel", endDrag);
+
+    e.preventDefault();
+  }
+
+  function onDragMove(e) {
+    if (!dragState) return;
+
+    const win = dragState.win;
+    const dx = e.clientX - dragState.x;
+    const dy = e.clientY - dragState.y;
+
+    const maxLeft = Math.max(8, window.innerWidth - win.offsetWidth - 8);
+    const maxTop = Math.max(8, window.innerHeight - win.offsetHeight - 8);
+
+    const left = Math.max(8, Math.min(maxLeft, dragState.left + dx));
+    const top = Math.max(8, Math.min(maxTop, dragState.top + dy));
+
+    win.style.left = left + "px";
+    win.style.top = top + "px";
+  }
+
+  function endDrag() {
+    if (dragState && dragState.win) {
+      dragState.win.dataset.positioned = "1";
+      savePosition(dragState.win.dataset.app);
+    }
+    dragState = null;
+
+    document.removeEventListener("pointermove", onDragMove);
+    document.removeEventListener("pointerup", endDrag);
+    document.removeEventListener("pointercancel", endDrag);
+  }
+
+  /* ---------- Изменение размера экрана ---------- */
+
+  function onResize() {
+    if (isMobile()) {
+      const openIds = DATA.windows.map(function (cfg) { return cfg.id; }).filter(function (id) {
+        return state[id];
+      });
+
+      if (openIds.length > 1) {
+        const keep = openIds.indexOf(lastFocused) !== -1 ? lastFocused : openIds[openIds.length - 1];
+        openIds.forEach(function (id) {
+          if (id !== keep) hideInstant(id);
+        });
+      }
+    } else {
+      clampOpenWindows();
+    }
+  }
+
+  /* ---------- Контекст для отрисовщиков ---------- */
+
+  const ctx = {
+    open: openWindow,
+    close: closeWindow,
+    minimize: minimizeWindow,
+    toggle: toggleWindow,
+    center: centerAndMark,
+    focus: focusWindow,
+    applySetting: applySetting,
+    getTheme: function () {
+      return { accent: themeState.accent, color: themeState.color };
+    },
+    getSettings: function () {
+      return Object.assign({}, settingsState);
+    },
+    getWindow: function (id) {
+      return windows.get(id) || null;
+    }
+  };
+
+  /* ---------- Публичный доступ ---------- */
+
+  window.WindowManager = {
+    open: openWindow,
+    close: closeWindow,
+    minimize: minimizeWindow,
+    toggle: toggleWindow,
+    center: centerAndMark,
+    focus: focusWindow,
+    sync: sync,
+    remove: removeWindow,
+    refresh: function (id) {
+      const cfg = configs.get(id);
+      if (cfg) paintWindow(cfg);
+    },
+    getEl: function (id) {
+      return windows.get(id) || null;
+    }
+  };
+
+  /* ---------- Запуск ---------- */
+
+  function init() {
+    if (DATA.meta && DATA.meta.title) {
+      document.title = DATA.meta.title;
+    }
+
+    settingsState = loadSettings();
+    themeColor();
+    applySettings();
+    applyTheme();
+    buildClock();
+
+    if (darkQuery && darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", function () {
+        if ((settingsState.theme || "light") === "auto") applyTheme();
+      });
+    }
+
+    DATA.windows.forEach(function (cfg) {
+      configs.set(cfg.id, cfg);
+      buildWindow(cfg);
+    });
+
+    buildDock();
+
+    DATA.windows.forEach(function (cfg) {
+      if (cfg.open) openWindow(cfg.id);
+    });
+
+    window.addEventListener("resize", onResize);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();

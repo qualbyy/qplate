@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="окно с видом на бумажный город">
+  <rect width="800" height="600" fill="#e9ddc8"/>
+  <rect x="120" y="80" width="560" height="440" fill="#f7f1e5" stroke="#a07844" stroke-width="8"/>
+  <line x1="400" y1="80" x2="400" y2="520" stroke="#a07844" stroke-width="8"/>
+  <line x1="120" y1="300" x2="680" y2="300" stroke="#a07844" stroke-width="8"/>
+  <g fill="#d9b98a">
+    <rect x="160" y="340" width="70" height="140"/>
+    <rect x="250" y="380" width="90" height="100"/>
+    <rect x="450" y="350" width="80" height="130"/>
+    <rect x="560" y="390" width="80" height="90"/>
+  </g>
+  <g fill="#825e2e" opacity="0.55">
+    <rect x="180" y="360" width="12" height="12"/>
+    <rect x="210" y="360" width="12" height="12"/>
+    <rect x="470" y="370" width="12" height="12"/>
+    <rect x="500" y="400" width="12" height="12"/>
+  </g>
+  <circle cx="540" cy="180" r="46" fill="#d9b98a"/>
+  <path d="M160 460 C240 430 320 450 400 440" fill="none" stroke="#825e2e" stroke-width="2" opacity="0.5"/>
+</svg>

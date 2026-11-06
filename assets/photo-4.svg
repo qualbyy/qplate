@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="поле из простых песочных форм">
+  <rect width="800" height="600" fill="#f4ecdc"/>
+  <path d="M0 340 L800 260 L800 600 L0 600 Z" fill="#d9b98a"/>
+  <path d="M0 430 L800 360 L800 600 L0 600 Z" fill="#c9a878"/>
+  <path d="M0 520 L800 470 L800 600 L0 600 Z" fill="#a07844"/>
+  <g stroke="#825e2e" stroke-width="2" opacity="0.45" fill="none">
+    <path d="M0 430 L800 360"/>
+    <path d="M0 520 L800 470"/>
+  </g>
+  <circle cx="150" cy="160" r="54" fill="#e0c79c"/>
+  <g stroke="#a07844" stroke-width="2" opacity="0.5">
+    <line x1="470" y1="120" x2="650" y2="120"/>
+    <line x1="510" y1="150" x2="690" y2="150"/>
+    <line x1="550" y1="180" x2="730" y2="180"/>
+  </g>
+</svg>
