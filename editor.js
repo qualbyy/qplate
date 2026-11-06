@@ -100,7 +100,13 @@
         title: (s.meta && s.meta.title) || "мой рабочий стол",
         user: (s.meta && s.meta.user) || "you",
         name: (s.meta && s.meta.name) || "",
-        footer: (s.meta && s.meta.footer) || ""
+        footer: (s.meta && s.meta.footer) || "",
+        preview: {
+          title: (s.meta && s.meta.preview && s.meta.preview.title) || "",
+          description: (s.meta && s.meta.preview && s.meta.preview.description) || "",
+          image: (s.meta && s.meta.preview && s.meta.preview.image) || "assets/preview.png",
+          url: (s.meta && s.meta.preview && s.meta.preview.url) || "https://qualbyy.github.io/qplate/"
+        }
       },
       notes: (Array.isArray(s.notes) ? s.notes : []).map(function (note) {
         const entry = contentEntry(note, false);
@@ -151,6 +157,9 @@
     const d = value || {};
 
     if (!d.meta) d.meta = { title: "мой рабочий стол", user: "you", name: "", footer: "" };
+    if (!d.meta.preview) d.meta.preview = clone((DATA.meta && DATA.meta.preview) || {
+      title: "", description: "", image: "assets/preview.png", url: ""
+    });
     if (!Array.isArray(d.notes)) d.notes = [];
     if (!d.pdf) d.pdf = { title: "документ", pages: [] };
     if (!Array.isArray(d.pdf.pages)) d.pdf.pages = [];
@@ -660,6 +669,8 @@
       draft.meta.footer = value;
     }, { multiline: true, rows: 2 }));
 
+    box.appendChild(previewBlock());
+
     const hint = el("div", "ed-hint", "изменения видны сразу после кнопки «применить». черновик сохраняется сам.");
     box.appendChild(hint);
 
@@ -668,6 +679,49 @@
     reset.title = "вернуть исходные данные сайта и удалить черновик";
     reset.addEventListener("click", resetAll);
     box.appendChild(reset);
+
+    return box;
+  }
+
+  /* Блок «превью для ссылок»: заголовок, описание и картинка. */
+  function previewBlock() {
+    const box = el("div", "ed-card");
+    box.appendChild(el("div", "ed-card-title", "превью для ссылок"));
+    box.appendChild(el("div", "ed-hint", "заголовок, описание и картинка в мессенджерах и соцсетях"));
+
+    box.appendChild(field("заголовок превью", draft.meta.preview.title, function (value) {
+      draft.meta.preview.title = value;
+    }, { placeholder: "если пусто — название сайта" }));
+
+    box.appendChild(field("описание", draft.meta.preview.description, function (value) {
+      draft.meta.preview.description = value;
+    }, { multiline: true, rows: 2, hint: "одна-две строки, что это за сайт" }));
+
+    box.appendChild(field("картинка (адрес)", draft.meta.preview.image, function (value) {
+      draft.meta.preview.image = value;
+    }, {
+      pick: {
+        accept: "image/*",
+        apply: function (value) { draft.meta.preview.image = value; }
+      },
+      hint: "по умолчанию assets/preview.png, ширину делай около 1200 px"
+    }));
+
+    box.appendChild(field("адрес сайта", draft.meta.preview.url, function (value) {
+      draft.meta.preview.url = value;
+    }, { placeholder: "https://qualbyy.github.io/qplate/", hint: "нужен, чтобы картинка была полным адресом" }));
+
+    const image = document.createElement("img");
+    image.className = "ed-preview-img";
+    image.alt = "превью ссылки";
+    image.src = draft.meta.preview.image || "assets/preview.png";
+    image.addEventListener("error", function () {
+      image.style.display = "none";
+    });
+    image.addEventListener("load", function () {
+      image.style.display = "";
+    });
+    box.appendChild(image);
 
     return box;
   }
@@ -1518,6 +1572,25 @@
 
   function buildIndexHtml() {
     const title = (DATA.meta && DATA.meta.title) || "рабочий стол";
+    const preview = (DATA.meta && DATA.meta.preview) || {};
+    const ogTitle = preview.title || title;
+    const ogText = preview.description || "";
+    const ogImage = absoluteUrl(preview.image);
+    const ogUrl = absoluteUrl(preview.url);
+    const head = [];
+
+    if (ogText) head.push('  <meta name="description" content="' + esc(ogText) + '">');
+    head.push('  <meta property="og:type" content="website">');
+    head.push('  <meta property="og:site_name" content="' + esc(title) + '">');
+    head.push('  <meta property="og:title" content="' + esc(ogTitle) + '">');
+    if (ogText) head.push('  <meta property="og:description" content="' + esc(ogText) + '">');
+    if (ogImage) head.push('  <meta property="og:image" content="' + esc(ogImage) + '">');
+    if (ogUrl) head.push('  <meta property="og:url" content="' + esc(ogUrl) + '">');
+    head.push('  <meta name="twitter:card" content="' + (ogImage ? "summary_large_image" : "summary") + '">');
+    head.push('  <meta name="twitter:title" content="' + esc(ogTitle) + '">');
+    if (ogText) head.push('  <meta name="twitter:description" content="' + esc(ogText) + '">');
+    if (ogImage) head.push('  <meta name="twitter:image" content="' + esc(ogImage) + '">');
+
     return [
       "<!DOCTYPE html>",
       '<html lang="ru">',
@@ -1525,7 +1598,8 @@
       '  <meta charset="UTF-8">',
       '  <meta name="viewport" content="width=device-width, initial-scale=1.0">',
       '  <meta name="color-scheme" content="light">',
-      "  <title>" + esc(title) + "</title>",
+      "  <title>" + esc(title) + "</title>"
+    ].concat(head, [
       '  <link rel="stylesheet" href="shell.css">',
       '  <link rel="stylesheet" href="apps.css">',
       "</head>",
@@ -1538,7 +1612,21 @@
       "</body>",
       "</html>",
       ""
-    ].join("\n");
+    ]).join("\n");
+  }
+
+  /* Картинка превью должна быть полным адресом, иначе мессенджеры её не увидят. */
+  function absoluteUrl(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    if (text.indexOf("data:") === 0 || /^https?:\/\//i.test(text)) return text;
+    let base = (DATA.meta && DATA.meta.preview && DATA.meta.preview.url) || "";
+    if (!/^https?:\/\//i.test(base)) base = location.href.split(/[?#]/)[0];
+    try {
+      return new URL(text, base).href;
+    } catch (err) {
+      return text;
+    }
   }
 
   function buildReadme() {
@@ -1605,16 +1693,19 @@
     return { time: time & 0xffff, date: date & 0xffff };
   }
 
-  function buildZip(files) {
+  async function buildZip(files) {
     const encoder = new TextEncoder();
     const stamp = zipDate(new Date());
     const parts = [];
     const central = [];
     let offset = 0;
 
-    files.forEach(function (file) {
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
       const nameBytes = encoder.encode(file[0]);
-      const data = encoder.encode(file[1]);
+      const data = file[1] instanceof Blob
+        ? new Uint8Array(await file[1].arrayBuffer())
+        : encoder.encode(file[1]);
       const crc = crc32(data);
 
       const local = new Uint8Array(30 + nameBytes.length);
@@ -1650,7 +1741,7 @@
       parts.push(local, data);
       central.push(cd);
       offset += local.length + data.length;
-    });
+    }
 
     const centralSize = central.reduce(function (sum, part) { return sum + part.length; }, 0);
     const end = new Uint8Array(22);
@@ -1677,6 +1768,19 @@
     }, 1000);
   }
 
+  /* Картинка превью: локальный файл assets/preview.png (или другой из папки assets). */
+  async function previewAsset() {
+    const value = String((draft.meta.preview && draft.meta.preview.image) || "");
+    if (!/^assets\/[^/]+\.(png|jpe?g|webp|gif|svg)$/i.test(value)) return null;
+    try {
+      const response = await fetch(value + "?v=" + Date.now(), { cache: "no-store" });
+      if (!response.ok) return null;
+      return [value, await response.blob()];
+    } catch (err) {
+      return null;
+    }
+  }
+
   async function downloadFiles() {
     commit();
     saveDraft();
@@ -1701,6 +1805,9 @@
 
     files.push(["README.md", buildReadme()]);
     files.push(["project.json", buildProjectFile()]);
+
+    const asset = await previewAsset();
+    if (asset) files.push(asset);
 
     if (missing.length) {
       setStatus("не читаются " + missing.join(", ") + ": открой сайт через сервер и повтори", "err");
@@ -1760,6 +1867,16 @@
         await folderHandle.getDirectoryHandle("assets", { create: true });
       } catch (err) {
         /* папка для картинок необязательна */
+      }
+
+      const asset = await previewAsset();
+      if (asset) {
+        const assetsDir = await folderHandle.getDirectoryHandle("assets", { create: true });
+        const name = asset[0].replace(/^assets\//, "");
+        const fileHandle = await assetsDir.getFileHandle(name, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(asset[1]);
+        await writable.close();
       }
 
       setStatus("сайт сохранён в папку «" + folderHandle.name + "»", "ok");
