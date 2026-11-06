@@ -996,6 +996,12 @@
   background: var(--accent-dark);
 }
 
+.music-cover.is-accent {
+  filter: none;
+  object-fit: contain;
+  background: var(--sand-dark);
+}
+
 .music-note {
   font-size: 10.5px;
   color: var(--text-dim);

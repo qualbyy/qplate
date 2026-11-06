@@ -787,6 +787,7 @@
     }
 
     const cover = make("img", "music-cover");
+    if (data.coverMode === "accent") cover.classList.add("is-accent");
     cover.src = data.cover || "";
     cover.alt = "обложка альбома";
     cover.addEventListener("error", function () {
@@ -842,7 +843,7 @@
     app.appendChild(meta);
     app.appendChild(progress);
     app.appendChild(controls);
-    app.appendChild(make("div", "music-note", "звука нет — только визуальный прогресс."));
+    app.appendChild(make("div", "music-note", data.note || "звука нет — только визуальный прогресс."));
     body.appendChild(app);
 
     let current = 0;
@@ -922,6 +923,17 @@
     function selectTrack(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       elapsed = 0;
+
+      if (audio) {
+        audio.pause();
+        if (tracks[current].src) {
+          audio.src = tracks[current].src;
+          if (autoplay) audio.play().catch(function () {});
+        } else {
+          audio.removeAttribute("src");
+        }
+      }
+
       paint();
 
       if (autoplay) {
@@ -932,7 +944,26 @@
       }
     }
 
-    play.addEventListener("click", togglePlay);
+    const audio = document.createElement("audio");
+    audio.preload = "none";
+    if (tracks[0] && tracks[0].src) audio.src = tracks[0].src;
+
+    audio.addEventListener("timeupdate", function () {
+      if (audio.duration > 0) elapsed = audio.currentTime;
+      paint();
+    });
+
+    audio.addEventListener("ended", function () {
+      current = (current + 1) % tracks.length;
+      elapsed = 0;
+      selectTrack(current, true);
+    });
+
+    play.addEventListener("click", function () {
+      if (!tracks[current].src) return togglePlay();
+      if (audio.paused) audio.play().catch(function () {});
+      else audio.pause();
+    });
 
     prev.addEventListener("click", function () {
       selectTrack(current - 1, playing);
@@ -945,6 +976,7 @@
     range.addEventListener("input", function () {
       const duration = Math.max(1, tracks[current].seconds || 1);
       elapsed = (Number(range.value) / 1000) * duration;
+      if (tracks[current].src && audio.duration > 0) audio.currentTime = elapsed;
       paint();
     });
 

@@ -136,6 +136,8 @@
       photos: clone(Array.isArray(s.photos) ? s.photos : []),
       music: {
         cover: (s.music && s.music.cover) || "",
+        coverMode: (s.music && s.music.coverMode) || "photo",
+        note: (s.music && s.music.note) || "",
         album: (s.music && s.music.album) || "",
         tracks: clone((s.music && Array.isArray(s.music.tracks)) ? s.music.tracks : [])
       }
@@ -675,7 +677,14 @@
       draft.music.album = value;
     }));
 
-    wrap.appendChild(field("обложка", draft.music.cover, function (value) {
+    wrap.appendChild(selectField("обложка", draft.music.coverMode || "photo", [
+      ["photo", "как на фото"],
+      ["accent", "ключевым цветом"]
+    ], function (value) {
+      draft.music.coverMode = value;
+    }));
+
+    wrap.appendChild(field("картинка обложки", draft.music.cover, function (value) {
       draft.music.cover = value;
     }, {
       hint: "адрес картинки, файл в assets или выбрать с устройства",
@@ -685,6 +694,12 @@
           draft.music.cover = value;
         }
       }
+    }));
+
+    wrap.appendChild(field("подпись внизу", draft.music.note, function (value) {
+      draft.music.note = value;
+    }, {
+      hint: "строка под плеером"
     }));
 
     draft.music.tracks.forEach(function (track, index) {
@@ -712,6 +727,18 @@
 
       card.appendChild(field("длительность, секунд", String(track.seconds || 0), function (value) {
         track.seconds = Math.max(1, parseInt(value, 10) || 1);
+      }));
+
+      card.appendChild(field("файл трека", track.src || "", function (value) {
+        track.src = value;
+      }, {
+        hint: "адрес mp3 или выбрать файл с устройства",
+        pick: {
+          accept: "audio/*",
+          apply: function (value) {
+            track.src = value;
+          }
+        }
       }));
 
       wrap.appendChild(card);
