@@ -1761,22 +1761,25 @@ blockquote {
   margin-top: 14px;
   padding-top: 10px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
+  opacity: 0.65;
   border-top: 1px dashed var(--border);
+  letter-spacing: 0.02em;
 }
 
 .settings-watermark a {
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.15s ease;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: normal;
+  transition: opacity 0.15s ease, color 0.15s ease;
 }
 
 .settings-watermark a:hover,
 .settings-watermark a:focus-visible {
-  text-decoration: underline;
-  opacity: 0.85;
+  color: var(--accent);
+  opacity: 1;
 }
 
 /* ------------------------------------------------------------
