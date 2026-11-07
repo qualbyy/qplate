@@ -267,8 +267,6 @@
     quickButton("help", "help");
     quickButton("clear", "clear");
 
-    // neofetch-кнопка убрана
-
     quickLine.appendChild(quickNav);
     quickLine.appendChild(make("div", "term-dim", data.hint || ""));
     app.appendChild(quickLine);
@@ -340,7 +338,7 @@
       });
 
       rows.push("  - all        : показать все разделы");
-      rows.push("  - neofetch   : только карточка fastfetch");
+      rows.push("  - fastfetch  : карточка с информацией");
       rows.push("  - help       : этот список");
       rows.push("  - clear      : очистить вывод");
 
@@ -420,7 +418,7 @@
         return;
       }
 
-      if (command === "fetch" || command === "neofetch" || command === "fastfetch") {
+      if (command === "fetch" || command === "fastfetch") {
         output.innerHTML = "";
         scrollTo(app.querySelector(".fetch-container"));
         return;
@@ -652,6 +650,24 @@
       return;
     }
 
+    const KINDS = {
+      image: { label: "картинка", icon: "photos" },
+      audio: { label: "аудио", icon: "music" },
+      pdf: { label: "pdf", icon: "pdf" },
+      text: { label: "текст", icon: "notes" },
+      unknown: { label: "файл", icon: "files" }
+    };
+
+    function fileKind(file) {
+      if (file.kind && KINDS[file.kind]) return file.kind;
+      const ext = String(file.name || "").split(".").pop().toLowerCase();
+      if (["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp"].indexOf(ext) >= 0) return "image";
+      if (["mp3", "wav", "ogg", "m4a", "aac", "flac"].indexOf(ext) >= 0) return "audio";
+      if (ext === "pdf") return "pdf";
+      if (["txt", "md", "js", "css", "html", "json", "csv", "log", "xml", "yml", "yaml", "ts", "jsx", "tsx"].indexOf(ext) >= 0) return "text";
+      return "unknown";
+    }
+
     const app = make("div", "app-files");
     const toolbar = make("div", "files-toolbar");
     const list = make("div", "files-list");
@@ -665,7 +681,7 @@
     previewHead.appendChild(previewName);
     previewHead.appendChild(previewClose);
 
-    const previewBody = make("pre", "file-preview-body");
+    const previewBody = make("div", "file-preview-body");
 
     preview.appendChild(previewHead);
     preview.appendChild(previewBody);
@@ -676,6 +692,118 @@
     body.appendChild(app);
 
     const path = [data.root];
+    let blobUrl = "";
+    let viewToken = 0;
+
+    function releaseBlob() {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        blobUrl = "";
+      }
+    }
+
+    function hidePreview() {
+      viewToken++;
+      releaseBlob();
+      preview.hidden = true;
+      previewBody.innerHTML = "";
+      previewName.textContent = "";
+    }
+
+    function addActions(file, url) {
+      const actions = make("div", "file-preview-actions");
+
+      const open = make("a", "preview-action", "открыть");
+      open.href = url;
+      open.target = "_blank";
+      open.rel = "noopener";
+
+      const save = make("a", "preview-action", "скачать");
+      save.href = url;
+      save.download = file.name || "файл";
+
+      actions.appendChild(open);
+      actions.appendChild(save);
+      previewBody.appendChild(actions);
+    }
+
+    function showFile(file) {
+      const kind = fileKind(file);
+      const token = ++viewToken;
+      releaseBlob();
+      previewName.textContent = file.name || "файл";
+      previewBody.innerHTML = "";
+      preview.hidden = false;
+
+      if (kind === "text") {
+        const text = file.content !== undefined ? String(file.content) : "(пусто)";
+        previewBody.appendChild(make("pre", "file-preview-text", text || "(пусто)"));
+        blobUrl = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+        addActions(file, blobUrl);
+        return;
+      }
+
+      if (kind === "unknown") {
+        const box = make("div", "file-unknown");
+        box.setAttribute("role", "alert");
+        box.appendChild(make("strong", "file-unknown-title", "формат не поддерживается"));
+        box.appendChild(make("p", "file-unknown-text", "файл «" + (file.name || "без имени") + "» нельзя показать в окне, но можно скачать."));
+        previewBody.appendChild(box);
+
+        if (file.src) {
+          fetch(file.src).then(function (response) { return response.blob(); }).then(function (blob) {
+            if (token !== viewToken) return;
+            blobUrl = URL.createObjectURL(blob);
+            addActions(file, blobUrl);
+          }).catch(function () {
+            if (token === viewToken) previewBody.appendChild(make("p", "empty-note", "не удалось открыть файл."));
+          });
+        } else if (file.content) {
+          blobUrl = URL.createObjectURL(new Blob([String(file.content)], { type: "application/octet-stream" }));
+          addActions(file, blobUrl);
+        }
+        return;
+      }
+
+      const src = file.src || "";
+      if (!src) {
+        previewBody.appendChild(make("p", "empty-note", "файл не прикреплён."));
+        return;
+      }
+
+      fetch(src).then(function (response) { return response.blob(); }).then(function (blob) {
+        if (token !== viewToken) return;
+        blobUrl = URL.createObjectURL(blob);
+
+        if (kind === "image") {
+          const img = make("img", "file-preview-image");
+          img.src = blobUrl;
+          img.alt = file.name || "картинка";
+          img.addEventListener("error", function () {
+            if (token !== viewToken) return;
+            img.remove();
+            previewBody.insertBefore(make("p", "empty-note", "картинка не открылась."), previewBody.firstChild);
+          });
+          previewBody.appendChild(img);
+        } else if (kind === "audio") {
+          const audio = make("audio", "file-preview-audio");
+          audio.controls = true;
+          audio.autoplay = true;
+          audio.src = blobUrl;
+          previewBody.appendChild(audio);
+        } else if (kind === "pdf") {
+          const frame = make("iframe", "file-preview-pdf");
+          frame.src = blobUrl;
+          frame.title = file.name || "pdf";
+          previewBody.appendChild(frame);
+        }
+
+        addActions(file, blobUrl);
+      }).catch(function () {
+        if (token !== viewToken) return;
+        previewBody.appendChild(make("p", "empty-note", "не удалось открыть файл."));
+      });
+    }
 
     function renderBreadcrumbs() {
       toolbar.innerHTML = "";
@@ -698,17 +826,6 @@
       });
     }
 
-    function hidePreview() {
-      preview.hidden = true;
-      previewBody.textContent = "";
-    }
-
-    function showFile(file) {
-      previewName.textContent = file.name;
-      previewBody.textContent = file.content || "(пусто)";
-      preview.hidden = false;
-    }
-
     function renderList() {
       list.innerHTML = "";
 
@@ -722,14 +839,16 @@
 
       children.forEach(function (child) {
         const isFolder = child.type === "folder";
+        const kind = isFolder ? "folder" : fileKind(child);
+        const info = KINDS[kind] || KINDS.unknown;
         const row = make("button", "file-row" + (isFolder ? " is-folder" : ""));
         row.type = "button";
 
         const glyph = make("span", "file-glyph");
-        glyph.innerHTML = isFolder ? DATA.icons.files : DATA.icons.pdf;
+        glyph.innerHTML = isFolder ? DATA.icons.files : (DATA.icons[info.icon] || DATA.icons.files);
         row.appendChild(glyph);
         row.appendChild(make("span", "file-name", child.name || "без имени"));
-        row.appendChild(make("span", "file-meta", isFolder ? "папка" : "файл"));
+        row.appendChild(make("span", "file-meta", isFolder ? "папка" : info.label));
 
         row.addEventListener("click", function () {
           if (isFolder) {
@@ -752,6 +871,15 @@
     }
 
     previewClose.addEventListener("click", hidePreview);
+
+    const cleanup = new MutationObserver(function () {
+      if (!document.body.contains(app)) {
+        viewToken++;
+        releaseBlob();
+        cleanup.disconnect();
+      }
+    });
+    cleanup.observe(document.body, { childList: true, subtree: true });
 
     render();
   }
@@ -1331,13 +1459,18 @@
 
       if (item.type === "number") {
         const input = make("input", "setting-select");
+        const min = Number.isFinite(Number(item.min)) ? Number(item.min) : 10;
+        const max = Number.isFinite(Number(item.max)) ? Number(item.max) : 200;
+        const fallback = Number(item.value);
         input.type = "number";
-        input.min = "10";
-        input.max = "200";
-        input.value = String(currentSettings[item.id] || item.value || 34);
+        input.min = String(min);
+        input.max = String(max);
+        input.step = "1";
+        input.value = String(Number(currentSettings[item.id]) || (Number.isFinite(fallback) ? fallback : min));
 
         input.addEventListener("input", function () {
-          const value = Math.min(200, Math.max(10, parseInt(input.value, 10) || 0));
+          const parsed = parseInt(input.value, 10);
+          const value = Math.min(max, Math.max(min, Number.isFinite(parsed) ? parsed : min));
           ctx.applySetting(item.id, value);
           currentSettings = ctx.getSettings();
         });
