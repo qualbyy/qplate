@@ -1443,6 +1443,14 @@
         const shouldOpen = savedOpen ? savedOpen.indexOf(cfg.id) >= 0 : cfg.open;
         if (shouldOpen) openWindow(cfg.id);
       });
+
+      DATA.windows.forEach(function (cfg) {
+        if (state[cfg.id]) return;
+        const win = windows.get(cfg.id);
+        if (!win) return;
+        win.classList.add("is-minimized");
+        win.setAttribute("aria-hidden", "true");
+      });
     }
 
     buildHotkeyHints();
