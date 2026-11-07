@@ -123,6 +123,34 @@
     return ins;
   }
 
+  function hyprOn() {
+    return !isMobile() && !isKiosk() && (settingsState.style || "desktop") === "hypr";
+  }
+
+  function layoutHypr() {
+    if (!hyprOn()) return;
+
+    const open = [];
+    windows.forEach(function (win, id) {
+      if (state[id]) open.push(win);
+    });
+    if (!open.length) return;
+
+    const ins = dockInsets();
+    const gap = 10;
+    const count = open.length;
+    const usable = window.innerWidth - ins.left - ins.right - gap * (count + 1);
+    const colW = Math.max(220, Math.floor(usable / count));
+    const colH = Math.max(200, window.innerHeight - ins.top - ins.bottom - gap * 2);
+
+    open.forEach(function (win, index) {
+      win.style.left = (ins.left + gap + index * (colW + gap)) + "px";
+      win.style.top = (ins.top + gap) + "px";
+      win.style.width = colW + "px";
+      win.style.height = colH + "px";
+    });
+  }
+
   function saveSettings() {
     try {
       localStorage.setItem(settingsKey, JSON.stringify(settingsState));
@@ -536,6 +564,7 @@
     document.body.classList.toggle("no-tooltips", settingsState.tooltips === false);
     document.body.classList.toggle("big-text", settingsState.bigtext === true);
     document.body.classList.toggle("no-clock", settingsState.clock === false);
+    document.body.classList.toggle("no-hints", settingsState.hints === false);
     document.body.classList.toggle("is-kiosk", isKiosk());
 
     document.body.dataset.style = settingsState.style || "desktop";
@@ -553,6 +582,7 @@
 
     applyClockPos();
     applyWallpaper();
+    layoutHypr();
   }
 
   function applySetting(id, value) {
@@ -805,6 +835,7 @@
 
     document.body.classList.toggle("is-kiosk", isKiosk());
     buildHotkeyHints();
+    layoutHypr();
   }
 
   function updateDock(id, open) {
@@ -841,6 +872,7 @@
 
     saveOpenState();
     focusWindow(id);
+    layoutHypr();
 
     const lifecycle = lifecycles.get(id);
     if (lifecycle && typeof lifecycle.onOpen === "function") lifecycle.onOpen();
@@ -860,6 +892,7 @@
     win.setAttribute("aria-hidden", "true");
     updateDock(id, false);
     saveOpenState();
+    layoutHypr();
 
     const lifecycle = lifecycles.get(id);
     if (lifecycle && typeof lifecycle.onHide === "function") lifecycle.onHide();
@@ -884,6 +917,7 @@
     const lifecycle = lifecycles.get(id);
     if (lifecycle && typeof lifecycle.onHide === "function") lifecycle.onHide();
 
+    layoutHypr();
     clearTimeout(closeTimers.get(id));
 
     const delay = motionOff() ? 0 : 380;
@@ -946,6 +980,7 @@
   const MIN_HEIGHT = 200;
 
   function startResize(e, id, dir) {
+    if (hyprOn()) return;
     if (isMobile()) return;
 
     const win = windows.get(id);
@@ -1007,6 +1042,7 @@
   }
 
   function toggleMaximize(id) {
+    if (hyprOn()) return;
     const win = windows.get(id);
     if (!win || isMobile() || win.classList.contains("is-kiosk")) return;
 
@@ -1104,7 +1140,7 @@
   /* ---------- Перетаскивание ---------- */
 
   function startDrag(e, id) {
-    if (isMobile() || e.button !== 0) return;
+    if (isMobile() || hyprOn() || e.button !== 0) return;
     if (e.target.closest("button, a, input, textarea, select")) return;
 
     const win = windows.get(id);
@@ -1249,8 +1285,30 @@
       btn.appendChild(document.createTextNode(" " + (cfg.label || cfg.id)));
 
       btn.addEventListener("click", function () {
-        if (state[cfg.id]) focusWindow(cfg.id);
+        if (state[cfg.id] && windows.get(cfg.id).classList.contains("is-focused")) closeWindow(cfg.id);
+        else if (state[cfg.id]) focusWindow(cfg.id);
         else openWindow(cfg.id);
+      });
+
+      bar.appendChild(btn);
+    });
+
+    [["q", "закрыть"], ["m", "свернуть"], ["f", "развернуть"]].forEach(function (action) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hotkey-hint";
+      btn.title = "окно: " + action[1];
+
+      const key = document.createElement("kbd");
+      key.textContent = "alt+" + action[0];
+      btn.appendChild(key);
+      btn.appendChild(document.createTextNode(" " + action[1]));
+
+      btn.addEventListener("click", function () {
+        if (!lastFocused || !state[lastFocused]) return;
+        if (action[0] === "q") closeWindow(lastFocused);
+        else if (action[0] === "m") minimizeWindow(lastFocused);
+        else toggleMaximize(lastFocused);
       });
 
       bar.appendChild(btn);
@@ -1268,7 +1326,18 @@
     const target = e.target;
     if (target && target.closest && target.closest("input, textarea, select, [contenteditable='true']")) return;
 
-    const number = parseInt(e.key, 10);
+    const key = String(e.key || "").toLowerCase();
+
+    if (key === "q" || key === "m" || key === "f") {
+      if (!lastFocused || !state[lastFocused]) return;
+      e.preventDefault();
+      if (key === "q") closeWindow(lastFocused);
+      else if (key === "m") minimizeWindow(lastFocused);
+      else toggleMaximize(lastFocused);
+      return;
+    }
+
+    const number = parseInt(key, 10);
     if (!(number >= 1 && number <= 9)) return;
 
     const cfg = (DATA.windows || [])[number - 1];
@@ -1276,7 +1345,9 @@
 
     e.preventDefault();
 
-    if (state[cfg.id]) focusWindow(cfg.id);
+    const win = windows.get(cfg.id);
+    if (state[cfg.id] && win && win.classList.contains("is-focused")) closeWindow(cfg.id);
+    else if (state[cfg.id]) focusWindow(cfg.id);
     else openWindow(cfg.id);
   }
 
@@ -1325,6 +1396,7 @@
     buildHotkeyHints();
     document.addEventListener("keydown", onHotkey);
     window.addEventListener("resize", onResize);
+    window.addEventListener("resize", layoutHypr);
   }
 
   if (document.readyState === "loading") {

@@ -775,90 +775,86 @@ body.theme-dark .side-dock {
 
 body.is-kiosk .side-dock,
 body.is-kiosk .hotkey-hints {
-  display: none !important;
-}
-
-body.is-kiosk .window.is-kiosk {
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 32px);
-}
-
-body.is-kiosk .window.is-kiosk .window-controls,
-body.is-kiosk .window.is-kiosk .win-grip {
   display: none;
 }
 
-body.is-kiosk .window.is-kiosk .window-header {
-  cursor: default;
-}
-
-body.is-kiosk .window.is-kiosk .window-spacer {
-  display: none;
-}
-
-/* ------------------------------------------------------------
-   Подсказки хоткеев (стиль hyprland)
-   ------------------------------------------------------------ */
-
-.hotkey-hints {
-  display: none;
-}
-
+/* В hyprland подсказки — одна тихая строка снизу */
 body[data-style="hypr"] .hotkey-hints {
   position: fixed;
   left: 50%;
-  bottom: 14px;
+  bottom: 7px;
   transform: translateX(-50%);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  max-width: calc(100vw - 24px);
-  padding: 6px;
-  background: var(--dock-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 16px);
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
   z-index: 900;
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
 }
 
-body[data-style="hypr"][data-dockmode="iphone"] .hotkey-hints {
-  bottom: calc(var(--dock-size) + 34px + env(safe-area-inset-bottom, 0px));
+body[data-style="hypr"] .hotkey-hints:hover {
+  opacity: 0.95;
+}
+
+body[data-style="hypr"][data-dockmode="iphone"][data-dockplace="bottom"] .hotkey-hints {
+  bottom: calc(var(--dock-size) + 20px + env(safe-area-inset-bottom, 0px));
+}
+
+body.no-hints .hotkey-hints {
+  display: none;
 }
 
 .hotkey-hint {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--term-bg);
-  color: var(--text-dim);
-  font-size: 11px;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 10px;
   white-space: nowrap;
 }
 
 .hotkey-hint:hover,
 .hotkey-hint:focus-visible {
-  background: var(--dock-hover-bg);
-  border-color: var(--sand-accent);
+  color: var(--text);
   outline: none;
 }
 
 .hotkey-hint kbd {
   font-family: inherit;
   font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--surface-mute);
-  color: var(--text-dim);
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.75;
 }
+
+/* hyprland: без рамок и ручек — окна укладываются сами */
+body[data-style="hypr"] .win-grip {
+  display: none;
+}
+
+body[data-style="hypr"] .window-header {
+  cursor: default;
+}
+
+body[data-style="hypr"] .window {
+  border-radius: 6px;
+}
+
 
 /* ------------------------------------------------------------
    Стили оболочки: windows 98, aero, hyprland
