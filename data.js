@@ -5,7 +5,7 @@
 
 window.DATA = {
   meta: {
-    title: "рабочий стол • скелетон",
+    title: "конструктор qplate",
     user: "you",
     name: "твоё имя",
     footer: "скелетон рабочего стола — меняй data.js и собирай свой.",
