@@ -761,12 +761,89 @@
   margin: 0;
   padding: 12px 14px;
   overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.6;
   color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.file-preview-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.file-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 32vh;
+  object-fit: contain;
+  align-self: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.file-preview-audio {
+  width: 100%;
+}
+
+.file-preview-pdf {
+  width: 100%;
+  height: 240px;
+  min-height: 180px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-paper);
+}
+
+.file-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: none;
+}
+
+.preview-action {
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border-dark);
+  border-radius: 5px;
+  background: var(--surface-soft);
+  color: var(--sand-dark);
+  text-decoration: none;
+}
+
+.preview-action:hover,
+.preview-action:focus-visible {
+  background: var(--sand-badge);
+  color: var(--text);
+  outline: none;
+}
+
+.file-unknown {
+  padding: 14px;
+  border: 1px dashed var(--border-dark);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.file-unknown-title {
+  display: block;
+  color: var(--sand-dark);
+  margin-bottom: 4px;
+}
+
+.file-unknown-text {
+  color: var(--text-dim);
+  font-size: 12px;
 }
 
 /* ---------- Фотографии ---------- */
@@ -894,6 +971,8 @@
   gap: 16px;
   padding: 22px 22px 24px;
   align-items: center;
+  flex: 1 1 auto;
+  justify-content: center;
 }
 
 /* ---------- Обложки треков (как в старом плеере) ---------- */
@@ -1491,8 +1570,27 @@
     padding: 16px;
   }
 
+  .music-card {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
   .music-cover {
-    width: min(100%, 170px);
+    width: min(62vw, 190px);
+  }
+
+  .win-btn {
+    width: 26px;
+    height: 28px;
+  }
+
+  .win-btn::before {
+    width: 12px;
+    height: 12px;
+  }
+
+  .window-spacer {
+    width: 78px;
   }
 
   .pdf-viewport {
