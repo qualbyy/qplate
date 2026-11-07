@@ -1230,7 +1230,8 @@
       btn.appendChild(document.createTextNode(" " + (cfg.label || cfg.id)));
 
       btn.addEventListener("click", function () {
-        toggleWindow(cfg.id);
+        if (state[cfg.id]) focusWindow(cfg.id);
+        else openWindow(cfg.id);
       });
 
       bar.appendChild(btn);
@@ -1255,7 +1256,9 @@
     if (!cfg) return;
 
     e.preventDefault();
-    toggleWindow(cfg.id);
+
+    if (state[cfg.id]) focusWindow(cfg.id);
+    else openWindow(cfg.id);
   }
 
   /* ---------- Запуск ---------- */

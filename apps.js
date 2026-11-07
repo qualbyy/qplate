@@ -882,6 +882,17 @@
     cleanup.observe(document.body, { childList: true, subtree: true });
 
     render();
+
+    return {
+      onHide: function () {
+        hidePreview();
+      },
+      onDestroy: function () {
+        viewToken++;
+        releaseBlob();
+        cleanup.disconnect();
+      }
+    };
   }
 
   /* ==========================================================
