@@ -410,7 +410,7 @@
     commit();
     if (window.WindowManager && WindowManager.sync) WindowManager.sync();
     restoreDefaultLayout();
-    setStatus("сброшено: вернулись исходные данные сайта", "ok");
+    window.location.reload();
   }
 
   /* ---------- Поля формы ---------- */
@@ -2386,6 +2386,7 @@
     clearSettingsBtn.title = "удалить сохранённые стили, тему и цвет из localStorage браузера";
     clearSettingsBtn.addEventListener("click", function () {
       [
+        STORE,
         "desktop-settings-v1",
         "desktop-accent-v1",
         "desktop-theme-accent-v1",
