@@ -102,14 +102,25 @@
     return !!pinnedConfig() && !hasEditorWindow();
   }
 
-  function dockClearance() {
-    if (isKiosk()) return 0;
-    if (isMobile()) return 92;
-    if ((settingsState.dockmode || "float") === "iphone") {
-      const dockEl = document.getElementById("dock");
-      return (dockEl ? dockEl.offsetHeight : 64) + 24;
+  function dockInsets() {
+    const ins = { top: 10, right: 10, bottom: 10, left: 10 };
+    if (isKiosk()) {
+      ins.top = ins.right = ins.bottom = ins.left = 0;
+      return ins;
     }
-    return 10;
+    if (isMobile()) {
+      ins.bottom = 92;
+      return ins;
+    }
+    const side = settingsState.dockplace || "right";
+    const dockEl = document.getElementById("dock");
+    const attached = (settingsState.dockmode || "float") === "iphone";
+    const gap = attached ? 20 : 12;
+    const size = side === "left" || side === "right"
+      ? (dockEl ? dockEl.offsetWidth : 60)
+      : (dockEl ? dockEl.offsetHeight : 60);
+    ins[side] = size + gap;
+    return ins;
   }
 
   function saveSettings() {
@@ -503,11 +514,12 @@
     const win = windows.get(id);
     if (!saved || !win) return false;
 
-    const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
+    const ins = dockInsets();
+    const maxLeft = Math.max(ins.left, window.innerWidth - win.offsetWidth - ins.right);
+    const maxTop = Math.max(ins.top, window.innerHeight - win.offsetHeight - ins.bottom);
 
-    win.style.left = Math.min(Math.max(10, saved.left || 10), maxLeft) + "px";
-    win.style.top = Math.min(Math.max(10, saved.top || 10), maxTop) + "px";
+    win.style.left = Math.min(Math.max(ins.left, saved.left || ins.left), maxLeft) + "px";
+    win.style.top = Math.min(Math.max(ins.top, saved.top || ins.top), maxTop) + "px";
 
     if (saved.width && saved.height) {
       win.style.width = Math.max(280, saved.width) + "px";
@@ -528,6 +540,7 @@
 
     document.body.dataset.style = settingsState.style || "desktop";
     document.body.dataset.dockmode = settingsState.dockmode || "float";
+    document.body.dataset.dockplace = settingsState.dockplace || "right";
     document.documentElement.style.setProperty("--dock-size", clampNumber({ min: 28, max: 64, value: 44 }, settingsState.docksize) + "px");
 
     ["tl", "tc", "tr", "bl", "bc", "br", "center", "custom"].forEach(function (pos) {
@@ -572,7 +585,7 @@
 
     if (id === "theme") applyTheme();
     if (id === "positions" && settingsState.positions === false) clearPositions();
-    if ((id === "dockmode" || id === "docksize") && windows.size) clampOpenWindows();
+    if ((id === "dockmode" || id === "docksize" || id === "dockplace") && windows.size) clampOpenWindows();
   }
 
   /* ---------- Сборка окна ---------- */
@@ -970,8 +983,11 @@
         top = startTop + (startHeight - height);
       }
 
-      const bottomLimit = window.innerHeight - dockClearance();
+      const ins = dockInsets();
+      const bottomLimit = window.innerHeight - ins.bottom;
+      const rightLimit = window.innerWidth - ins.right;
       if (top + height > bottomLimit) height = Math.max(MIN_HEIGHT, bottomLimit - top);
+      if (left + width > rightLimit) width = Math.max(MIN_WIDTH, rightLimit - left);
 
       win.style.left = Math.round(left) + "px";
       win.style.top = Math.round(top) + "px";
@@ -1060,10 +1076,11 @@
       tries += 1;
     }
 
-    const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
+    const ins = dockInsets();
+    const maxLeft = Math.max(ins.left, window.innerWidth - win.offsetWidth - ins.right);
+    const maxTop = Math.max(ins.top, window.innerHeight - win.offsetHeight - ins.bottom);
 
-    win.style.left = Math.min(left, maxLeft) + "px";
+    win.style.left = Math.min(Math.max(ins.left, left), maxLeft) + "px";
     win.style.top = Math.min(top, maxTop) + "px";
   }
 
@@ -1071,15 +1088,16 @@
     if (isMobile()) return;
 
     desktop.querySelectorAll(".window:not(.is-minimized)").forEach(function (win) {
-      const left = parseInt(win.style.left, 10) || 10;
-      const top = parseInt(win.style.top, 10) || 10;
-      const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-      const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
+      const ins = dockInsets();
+      const left = parseInt(win.style.left, 10) || ins.left;
+      const top = parseInt(win.style.top, 10) || ins.top;
+      const maxLeft = Math.max(ins.left, window.innerWidth - win.offsetWidth - ins.right);
+      const maxTop = Math.max(ins.top, window.innerHeight - win.offsetHeight - ins.bottom);
 
       if (left > maxLeft) win.style.left = maxLeft + "px";
       if (top > maxTop) win.style.top = maxTop + "px";
-      if (left < 10) win.style.left = "10px";
-      if (top < 10) win.style.top = "10px";
+      if (left < ins.left) win.style.left = ins.left + "px";
+      if (top < ins.top) win.style.top = ins.top + "px";
     });
   }
 
@@ -1118,11 +1136,12 @@
     const dx = e.clientX - dragState.x;
     const dy = e.clientY - dragState.y;
 
-    const maxLeft = Math.max(8, window.innerWidth - win.offsetWidth - 8);
-    const maxTop = Math.max(8, window.innerHeight - win.offsetHeight - dockClearance());
+    const ins = dockInsets();
+    const maxLeft = Math.max(ins.left, window.innerWidth - win.offsetWidth - ins.right);
+    const maxTop = Math.max(ins.top, window.innerHeight - win.offsetHeight - ins.bottom);
 
-    const left = Math.max(8, Math.min(maxLeft, dragState.left + dx));
-    const top = Math.max(8, Math.min(maxTop, dragState.top + dy));
+    const left = Math.max(ins.left, Math.min(maxLeft, dragState.left + dx));
+    const top = Math.max(ins.top, Math.min(maxTop, dragState.top + dy));
 
     win.style.left = left + "px";
     win.style.top = top + "px";

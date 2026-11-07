@@ -482,6 +482,113 @@ body[data-dockmode="iphone"] .dock-app:focus-visible .dock-tooltip {
   transform: translate(-50%, 0);
 }
 
+/* Сторона дока: справа, слева, сверху или снизу */
+body[data-dockplace="left"] .side-dock {
+  left: 12px;
+  right: auto;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+body[data-dockplace="top"] .side-dock {
+  left: 50%;
+  right: auto;
+  top: 12px;
+  bottom: auto;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+body[data-dockplace="bottom"] .side-dock {
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: 12px;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+/* Подсказки разворачиваются наружу от края */
+body[data-dockplace="left"] .dock-tooltip {
+  right: auto;
+  left: calc(var(--dock-size) + 12px);
+}
+
+body[data-dockplace="top"] .dock-tooltip,
+body[data-dockplace="bottom"] .dock-tooltip {
+  right: auto;
+  left: 50%;
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, 4px);
+}
+
+body[data-dockplace="bottom"] .dock-tooltip {
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translate(-50%, -4px);
+}
+
+body[data-dockplace="top"] .dock-app:hover .dock-tooltip,
+body[data-dockplace="top"] .dock-app:focus-visible .dock-tooltip,
+body[data-dockplace="bottom"] .dock-app:hover .dock-tooltip,
+body[data-dockplace="bottom"] .dock-app:focus-visible .dock-tooltip {
+  transform: translate(-50%, 0);
+}
+
+/* Прикреплённый док на других сторонах */
+body[data-dockmode="iphone"][data-dockplace="right"] .side-dock,
+body[data-dockmode="iphone"][data-dockplace="left"] .side-dock {
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  transform: none;
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 6px calc(12px + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body[data-dockmode="iphone"][data-dockplace="right"] .side-dock {
+  left: auto;
+  right: 0;
+  border-left: 1px solid var(--border-dark);
+}
+
+body[data-dockmode="iphone"][data-dockplace="left"] .side-dock {
+  left: 0;
+  right: auto;
+  border-right: 1px solid var(--border-dark);
+}
+
+body[data-dockmode="iphone"][data-dockplace="top"] .side-dock {
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: auto;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  flex-direction: row;
+  border: 0;
+  border-bottom: 1px solid var(--border-dark);
+  border-radius: 0;
+  padding: calc(9px + env(safe-area-inset-top, 0px)) 12px 9px;
+}
+
+body[data-dockmode="iphone"][data-dockplace="left"] .dock-tooltip,
+body[data-dockmode="iphone"][data-dockplace="right"] .dock-tooltip {
+  bottom: auto;
+  top: 50%;
+}
+
 /* ------------------------------------------------------------
    Настройки: крупный текст и выключенные анимации
    ------------------------------------------------------------ */
@@ -598,7 +705,7 @@ body.theme-dark.has-wallpaper::before {
   position: fixed;
   top: 14px;
   right: 18px;
-  z-index: 6;
+  z-index: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -627,7 +734,7 @@ body.clock-pos-bl .desktop-clock { left: 18px; right: auto; bottom: 18px; top: a
 body.clock-pos-bc .desktop-clock { left: 50%; right: auto; bottom: 18px; top: auto; transform: translateX(-50%); align-items: center; }
 body.clock-pos-br .desktop-clock { right: 18px; left: auto; bottom: 18px; top: auto; }
 body.clock-pos-center .desktop-clock { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); align-items: center; }
-body.clock-pos-custom .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; transform: none; align-items: flex-start; }
+body.clock-pos-custom .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; transform: none; align-items: flex-start; z-index: 6; }
 
 /* Размер часов */
 body.clock-size-s .clock-time { font-size: 15px; }
