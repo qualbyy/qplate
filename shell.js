@@ -745,6 +745,52 @@
 
   /* ---------- Док ---------- */
 
+  let dockTip = null;
+
+  function showDockTip(btn) {
+    if (isMobile() || isKiosk() || settingsState.tooltips === false) return;
+
+    if (!dockTip) {
+      dockTip = document.createElement("div");
+      dockTip.className = "dock-tooltip-float";
+      document.body.appendChild(dockTip);
+    }
+
+    dockTip.textContent = btn.getAttribute("aria-label") || "";
+    dockTip.classList.add("show");
+
+    const side = settingsState.dockplace || "right";
+    const gap = 10;
+    const r = btn.getBoundingClientRect();
+    const w = dockTip.offsetWidth;
+    const h = dockTip.offsetHeight;
+    let left = 0;
+    let top = 0;
+
+    if (side === "left") {
+      left = r.right + gap;
+      top = r.top + r.height / 2 - h / 2;
+    } else if (side === "top") {
+      left = r.left + r.width / 2 - w / 2;
+      top = r.bottom + gap;
+    } else if (side === "bottom") {
+      left = r.left + r.width / 2 - w / 2;
+      top = r.top - gap - h;
+    } else {
+      left = r.left - gap - w;
+      top = r.top + r.height / 2 - h / 2;
+    }
+
+    left = Math.max(4, Math.min(window.innerWidth - w - 4, left));
+    top = Math.max(4, Math.min(window.innerHeight - h - 4, top));
+    dockTip.style.left = Math.round(left) + "px";
+    dockTip.style.top = Math.round(top) + "px";
+  }
+
+  function hideDockTip() {
+    if (dockTip) dockTip.classList.remove("show");
+  }
+
   function createDockButton(cfg) {
     const old = dockButtons.get(cfg.id);
     if (old) old.remove();
@@ -758,15 +804,19 @@
     btn.setAttribute("aria-controls", "win-" + cfg.id);
     btn.innerHTML = [
       '<span class="dock-app-icon" aria-hidden="true"></span>',
-      '<span class="dock-app-dot" aria-hidden="true"></span>',
-      '<span class="dock-tooltip" aria-hidden="true"></span>'
+      '<span class="dock-app-dot" aria-hidden="true"></span>'
     ].join("");
 
     const icon = btn.querySelector(".dock-app-icon");
     icon.innerHTML = (DATA.icons || {})[cfg.iconKey] || "";
-    btn.querySelector(".dock-tooltip").textContent = cfg.label;
+
+    btn.addEventListener("pointerenter", function () { showDockTip(btn); });
+    btn.addEventListener("focus", function () { showDockTip(btn); });
+    btn.addEventListener("pointerleave", hideDockTip);
+    btn.addEventListener("blur", hideDockTip);
 
     btn.addEventListener("click", function () {
+      hideDockTip();
       toggleWindow(cfg.id);
     });
 

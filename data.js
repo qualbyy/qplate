@@ -247,9 +247,9 @@ window.DATA = {
     album: "демо-альбом",
     note: "звука нет — только визуальный прогресс.",
     tracks: [
-      { title: "первый трек", artist: "you", seconds: 187 },
-      { title: "второй трек", artist: "you", seconds: 224 },
-      { title: "третий трек", artist: "you", seconds: 165 }
+      { title: "первый трек", artist: "you", seconds: 187, cover: "assets/cover-1.svg" },
+      { title: "второй трек", artist: "you", seconds: 224, cover: "assets/cover-2.svg" },
+      { title: "третий трек", artist: "you", seconds: 165, cover: "assets/cover-3.svg" }
     ]
   },
 

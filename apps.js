@@ -1616,6 +1616,20 @@
       });
     });
 
+    const reset = make("button", "settings-reset", "сбросить настройки");
+    reset.type = "button";
+    reset.addEventListener("click", function () {
+      ["desktop-settings-v1", "desktop-accent-v1", "desktop-wallpaper-v1"].forEach(function (key) {
+        try {
+          localStorage.removeItem(key);
+        } catch (err) {
+          /* хранилище может быть запрещено */
+        }
+      });
+      window.location.reload();
+    });
+    app.appendChild(reset);
+
     body.appendChild(app);
   }
 

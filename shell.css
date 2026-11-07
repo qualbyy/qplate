@@ -778,6 +778,10 @@ body.is-kiosk .hotkey-hints {
   display: none;
 }
 
+.hotkey-hints {
+  display: none;
+}
+
 /* В hyprland подсказки — одна тихая строка снизу */
 body[data-style="hypr"] .hotkey-hints {
   position: fixed;
@@ -1161,4 +1165,38 @@ body[data-style="hypr"] .dock-tooltip {
     animation: none !important;
     opacity: 0;
   }
+}
+
+/* Всплывающая подсказка дока — всегда поверх окон */
+.dock-tooltip-float {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9000;
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--sand-dark);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.dock-tooltip-float.show {
+  opacity: 1;
+}
+
+body.theme-dark .dock-tooltip-float {
+  background: var(--surface-mute);
+  color: var(--text);
+}
+
+body.no-tooltips .dock-tooltip-float {
+  display: none;
 }
