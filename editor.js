@@ -374,8 +374,13 @@
 
         const isImage = accept.indexOf("image") === 0;
         const isAudio = accept.indexOf("audio") === 0;
+        const isBinary = isImage || isAudio || accept.indexOf("pdf") >= 0 || accept.indexOf("application/octet-stream") >= 0;
         const load = showLoader(file.name);
         const reader = new FileReader();
+
+        if (file.size > 2 * 1024 * 1024 && !isImage) {
+          setStatus("файл больше 2 МБ — может не сохраниться в черновике", "err");
+        }
 
         reader.onprogress = function (e) {
           if (e && e.lengthComputable && e.total) {
@@ -407,7 +412,7 @@
           load.fail("не удалось прочитать файл");
         };
 
-        if (isImage || isAudio) reader.readAsDataURL(file);
+        if (isBinary) reader.readAsDataURL(file);
         else reader.readAsText(file);
       });
 
@@ -757,6 +762,16 @@
     });
   }
 
+  function fileKind(node) {
+    if (node.kind) return node.kind;
+    const ext = String(node.name || "").split(".").pop().toLowerCase();
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp"].indexOf(ext) >= 0) return "image";
+    if (["mp3", "wav", "ogg", "m4a", "aac", "flac"].indexOf(ext) >= 0) return "audio";
+    if (ext === "pdf") return "pdf";
+    if (["txt", "md", "js", "css", "html", "json", "csv", "log", "xml", "yml", "yaml", "ts", "jsx", "tsx"].indexOf(ext) >= 0) return "text";
+    return "unknown";
+  }
+
   function filesTab() {
     if (!draft.files || !draft.files.root) {
       draft.files = clone((DATA.files && DATA.files.root) ? DATA.files : {
@@ -767,15 +782,21 @@
     if (!Array.isArray(draft.files.root.children)) draft.files.root.children = [];
 
     const wrap = el("div", "ed-tree");
-    wrap.appendChild(el("div", "ed-hint", "папки и файлы окна «файлы». текст файла показывается по клику, как в проводнике."));
+    wrap.appendChild(el("div", "ed-hint", "папки и файлы окна «файлы». текст открывается как текст, картинки, аудио и pdf — во встроенном просмотрщике."));
 
-    function addNode(parent, type) {
+    function addNode(parent, kind) {
       if (!Array.isArray(parent.children)) parent.children = [];
 
-      if (type === "folder") {
+      if (kind === "folder") {
         parent.children.push({ name: "новая папка", type: "folder", children: [] });
+      } else if (kind === "text") {
+        parent.children.push({ name: "новый файл.txt", type: "file", kind: "text", content: "" });
+      } else if (kind === "image") {
+        parent.children.push({ name: "картинка.png", type: "file", kind: "image", src: "" });
+      } else if (kind === "audio") {
+        parent.children.push({ name: "аудио.mp3", type: "file", kind: "audio", src: "" });
       } else {
-        parent.children.push({ name: "новый файл.txt", type: "file", content: "" });
+        parent.children.push({ name: "документ.pdf", type: "file", kind: "pdf", src: "" });
       }
 
       queueSave();
@@ -785,20 +806,15 @@
     function actionRow(parent) {
       const row = el("div", "ed-tree-actions");
 
-      const folder = el("button", "ed-btn", "+ папка");
-      folder.type = "button";
-      folder.addEventListener("click", function () {
-        addNode(parent, "folder");
+      [["folder", "+ папка"], ["text", "+ текст"], ["image", "+ картинка"], ["audio", "+ аудио"], ["pdf", "+ pdf"]].forEach(function (pair) {
+        const btn = el("button", "ed-btn", pair[1]);
+        btn.type = "button";
+        btn.addEventListener("click", function () {
+          addNode(parent, pair[0]);
+        });
+        row.appendChild(btn);
       });
 
-      const file = el("button", "ed-btn", "+ файл");
-      file.type = "button";
-      file.addEventListener("click", function () {
-        addNode(parent, "file");
-      });
-
-      row.appendChild(folder);
-      row.appendChild(file);
       return row;
     }
 
@@ -843,9 +859,33 @@
         card.appendChild(children);
         card.appendChild(actionRow(node));
       } else {
-        card.appendChild(field("содержимое", node.content || "", function (value) {
-          node.content = value;
-        }, { multiline: true, rows: 6, code: true }));
+        const kind = fileKind(node);
+        node.kind = kind;
+
+        if (kind === "text" || kind === "unknown") {
+          card.appendChild(field("содержимое", node.content || "", function (value) {
+            node.content = value;
+          }, { multiline: true, rows: 6, code: true }));
+        }
+
+        if (kind === "image" || kind === "audio" || kind === "pdf") {
+          const accept = kind === "image" ? "image/*" : kind === "audio" ? "audio/*" : ".pdf,application/pdf";
+          card.appendChild(field("адрес файла", node.src || "", function (value) {
+            node.src = value;
+          }, {
+            hint: "путь из assets или выбранный файл. большой файл может не поместиться в черновик.",
+            pick: {
+              accept: accept,
+              apply: function (value) {
+                node.src = value;
+              }
+            }
+          }));
+        } else if (kind === "unknown") {
+          card.appendChild(field("адрес файла", node.src || "", function (value) {
+            node.src = value;
+          }, { hint: "неизвестный формат: в окне файлов появится сообщение и кнопка «скачать»." }));
+        }
       }
 
       return card;
@@ -1274,6 +1314,18 @@
       sizeRow.appendChild(heightBox);
       fields.appendChild(sizeRow);
 
+      if (win.type !== "editor") {
+        const pinRow = el("div", "ed-row");
+        pinRow.appendChild(el("span", "ed-label", "главное окно сайта"));
+        pinRow.appendChild(stateButton(win.pinned === true, "включено", "выключено", function (on) {
+          draft.windows.forEach(function (other) {
+            other.pinned = other === win && on;
+          });
+        }));
+        fields.appendChild(pinRow);
+        fields.appendChild(el("div", "ed-hint", "в готовом сайте останется только это окно — без дока, кнопок и перетаскивания. в конструкторе оно остаётся редактируемым."));
+      }
+
       const iconKeys = Object.keys(DATA.icons || {});
       if (iconKeys.indexOf(win.iconKey) < 0) iconKeys.unshift(win.iconKey || "");
       const iconSelect = el("select", "ed-select");
@@ -1425,6 +1477,19 @@
         seg.appendChild(btn);
       });
       valueRow.appendChild(seg);
+    } else if (item.type === "number") {
+      const input = el("input", "ed-input");
+      input.type = "number";
+      input.step = "1";
+      if (item.min !== undefined) input.min = String(item.min);
+      if (item.max !== undefined) input.max = String(item.max);
+      input.value = String(item.value !== undefined ? item.value : "");
+      input.addEventListener("input", function () {
+        const parsed = parseInt(input.value, 10);
+        item.value = Number.isFinite(parsed) ? parsed : 0;
+        queueSave();
+      });
+      valueRow.appendChild(input);
     } else {
       const select = el("select", "ed-select");
       (item.options || []).forEach(function (pair) {
@@ -1504,6 +1569,87 @@
     return box;
   }
 
+  function guideTab() {
+    const wrap = el("div", "ed-guide");
+
+    function card(title, html) {
+      const node = el("div", "ed-card");
+      node.appendChild(el("div", "ed-card-title", title));
+      if (html) {
+        const body = el("div", "ed-guide-body");
+        body.innerHTML = html;
+        node.appendChild(body);
+      }
+      return node;
+    }
+
+    function code(text) {
+      return el("pre", "ed-guide-code", text);
+    }
+
+    wrap.appendChild(card("гайд: своё приложение в стиле qplate",
+      '<p class="ed-guide-p">этот гайд — про сам qplate, а не общий учебник по вёрстке. ниже — минимум, чтобы новое окно выглядело своим.</p>' +
+      '<p class="ed-guide-p">приложение — это запись окна в <code>data.js</code> и функция отрисовки в <code>apps.js</code>. ядро трогать не нужно.</p>'));
+
+    const steps = card("как добавить своё окно",
+      '<ol class="ed-guide-list">' +
+      '<li>добавь иконку в <code>DATA.icons</code>, если нужна своя;</li>' +
+      '<li>добавь запись в <code>DATA.windows</code>;</li>' +
+      '<li>напиши функцию <code>render</code> в <code>apps.js</code>;</li>' +
+      '<li>зарегистрируй тип в реестре отрисовщиков.</li>' +
+      '</ol>' +
+      '<p class="ed-guide-p">запись окна:</p>');
+    steps.appendChild(code('{ id: "guestbook", type: "guestbook", title: "гостевая",\n  label: "гостевая", iconKey: "notes", width: 480, height: 420 }'));
+    steps.appendChild(el("p", "ed-guide-p", "функция отрисовки:"));
+    steps.appendChild(code('function renderGuestbook(body, cfg, ctx) {\n  const app = document.createElement("div");\n  app.className = "app-page";\n  app.textContent = "здесь будет гостевая.";\n  body.appendChild(app);\n}\n\nrenderers.guestbook = { render: renderGuestbook };'));
+    wrap.appendChild(steps);
+
+    wrap.appendChild(card("правила qplate",
+      '<ul class="ed-guide-list">' +
+      '<li><b>цвета</b> — только <code>var(--accent)</code>, <code>var(--text)</code>, <code>var(--surface-*)</code>, <code>var(--border*)</code>, <code>var(--dock-*)</code>. свои hex-цвета не вписываем;</li>' +
+      '<li><b>шрифт</b> — наследуется от оболочки, новые шрифты не подключаем;</li>' +
+      '<li><b>форма</b> — окно 8 px, карточки 8–10 px, кнопки 6–8 px;</li>' +
+      '<li><b>отступы</b> — 12, 16, 20 или 24 px; корень приложения — <code>class="app-page"</code>;</li>' +
+      '<li><b>кнопки</b> — существующие классы, состояния hover, focus-visible и disabled;</li>' +
+      '<li><b>анимации</b> — 0.15–0.3 с, при <code>body.no-motion</code> не анимируем;</li>' +
+      '<li><b>телефон</b> — проверяем на 390 px, прокрутка через <code>.window-body</code>;</li>' +
+      '<li><b>тёмная тема</b> — не хардкодим белый и чёрный фон, проверяем <code>body.theme-dark</code>.</li>' +
+      '</ul>'));
+
+    wrap.appendChild(card("готовые классы",
+      '<ul class="ed-guide-list">' +
+      '<li><code>.app-page</code> — корень приложения с отступами;</li>' +
+      '<li><code>.content-heading</code> — заголовок внутри окна;</li>' +
+      '<li><code>.empty-note</code> — спокойная надпись «пусто»;</li>' +
+      '<li><code>.icon-btn</code> — кнопка-иконка;</li>' +
+      '<li><code>.window-body</code> — прокручиваемая часть окна;</li>' +
+      '<li><code>.setting-row</code>, <code>.file-row</code> — готовые строки настроек и файлов.</li>' +
+      '</ul>' +
+      '<p class="ed-guide-p">классы <code>.ed-*</code> — только для конструктора, в готовом сайте их нет.</p>'));
+
+    wrap.appendChild(card("чего избегать",
+      '<ul class="ed-guide-list">' +
+      '<li>библиотек, фреймворков и сборки;</li>' +
+      '<li>глобальных селекторов вроде <code>div { ... }</code>;</li>' +
+      '<li><code>z-index</code> выше 900 — окна и док живут ниже;</li>' +
+      '<li>инлайновых стилей вместо классов;</li>' +
+      '<li>новых ключей <code>localStorage</code> без префикса;</li>' +
+      '<li>заглушек и надписей «потом доделаю».</li>' +
+      '</ul>'));
+
+    wrap.appendChild(card("проверка перед сдачей",
+      '<ul class="ed-guide-list">' +
+      '<li>окно открывается из дока и не ломает другие;</li>' +
+      '<li>на 390 px ничего не обрезано;</li>' +
+      '<li>тёмная тема и крупный текст читаются;</li>' +
+      '<li>при выключенных анимациях всё работает;</li>' +
+      '<li>экспорт сайта сохраняет новое окно;</li>' +
+      '<li>в консоли нет ошибок.</li>' +
+      '</ul>'));
+
+    return wrap;
+  }
+
   const TABS = [
     { id: "project", label: "проект" },
     { id: "notes", label: "заметки" },
@@ -1514,7 +1660,8 @@
     { id: "music", label: "музыка" },
     { id: "settings", label: "настройки" },
     { id: "terminal", label: "терминал" },
-    { id: "apps", label: "приложения" }
+    { id: "apps", label: "приложения" },
+    { id: "guide", label: "гайд" }
   ];
 
   let activeTab = "project";
@@ -1547,6 +1694,7 @@
     else if (activeTab === "settings") panelRef.appendChild(settingsTab());
     else if (activeTab === "terminal") panelRef.appendChild(terminalTab());
     else if (activeTab === "apps") panelRef.appendChild(appsTab());
+    else if (activeTab === "guide") panelRef.appendChild(guideTab());
     else panelRef.appendChild(projectTab());
 
     panelRef.scrollTop = scroll;
