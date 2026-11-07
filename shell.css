@@ -42,6 +42,7 @@
   /* Скругление дока: чуть меньше, чем в старом био */
   --dock-radius: 20px;
   --dock-icon-radius: 10px;
+  --dock-size: 44px;
 }
 
 * {
@@ -82,8 +83,9 @@ button {
 }
 
 .desktop {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  z-index: 1;
 }
 
 /* ------------------------------------------------------------
@@ -345,8 +347,8 @@ button {
 }
 
 .dock-app {
-  width: 44px;
-  height: 44px;
+  width: var(--dock-size);
+  height: var(--dock-size);
   padding: 0;
   border-radius: var(--dock-icon-radius);
   background: var(--term-bg);
@@ -377,8 +379,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: calc(var(--dock-size) * 0.45);
+  height: calc(var(--dock-size) * 0.45);
   color: var(--sand-dark);
   line-height: 1;
 }
@@ -406,7 +408,7 @@ button {
 
 .dock-tooltip {
   position: absolute;
-  right: 56px;
+  right: calc(var(--dock-size) + 12px);
   top: 50%;
   transform: translate(6px, -50%);
   background: var(--sand-dark);
@@ -430,6 +432,54 @@ button {
 
 body.no-tooltips .dock-tooltip {
   display: none;
+}
+
+/* Док как на айфоне: полоса во всю ширину снизу */
+body[data-dockmode="iphone"] .side-dock {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: 0;
+  transform: none;
+  width: 100%;
+  max-width: none;
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  flex-direction: row;
+  justify-content: center;
+  padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+body[data-dockmode="iphone"] .side-dock::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-dockmode="iphone"] .dock-app {
+  flex: none;
+}
+
+body[data-dockmode="iphone"] .dock-app:hover,
+body[data-dockmode="iphone"] .dock-app:focus-visible {
+  transform: translateY(-3px);
+}
+
+body[data-dockmode="iphone"] .dock-tooltip {
+  right: auto;
+  left: 50%;
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform: translate(-50%, 4px);
+}
+
+body[data-dockmode="iphone"] .dock-app:hover .dock-tooltip,
+body[data-dockmode="iphone"] .dock-app:focus-visible .dock-tooltip {
+  transform: translate(-50%, 0);
 }
 
 /* ------------------------------------------------------------
@@ -474,25 +524,17 @@ body.no-motion .window.is-closing {
 
 @media (max-height: 700px) and (min-width: 769px) {
   .side-dock {
+    --dock-size: 40px;
     gap: 8px;
     padding: 7px 5px;
-  }
-
-  .dock-app {
-    width: 40px;
-    height: 40px;
   }
 }
 
 @media (max-height: 560px) and (min-width: 769px) {
   .side-dock {
+    --dock-size: 34px;
     gap: 6px;
     padding: 6px 5px;
-  }
-
-  .dock-app {
-    width: 34px;
-    height: 34px;
   }
 
   .dock-app-icon {
@@ -508,9 +550,9 @@ body.no-motion .window.is-closing {
    Обои
    ------------------------------------------------------------ */
 
-.desktop::before {
+body::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -518,33 +560,33 @@ body.no-motion .window.is-closing {
   background-repeat: repeat;
 }
 
-body[data-wallpaper="dots"] .desktop::before {
+body[data-wallpaper="dots"]::before {
   background-image: radial-gradient(rgba(var(--accent-rgb), 0.32) 1px, transparent 1.2px);
   background-size: 20px 20px;
 }
 
-body[data-wallpaper="grid"] .desktop::before {
+body[data-wallpaper="grid"]::before {
   background-image:
     linear-gradient(rgba(var(--accent-rgb), 0.14) 1px, transparent 1px),
     linear-gradient(90deg, rgba(var(--accent-rgb), 0.14) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
-body[data-wallpaper="waves"] .desktop::before {
+body[data-wallpaper="waves"]::before {
   background-image: repeating-linear-gradient(115deg, transparent 0 18px, rgba(var(--accent-rgb), 0.1) 18px 19px);
 }
 
-body[data-wallpaper="paper"] .desktop::before {
+body[data-wallpaper="paper"]::before {
   background-image: repeating-linear-gradient(0deg, rgba(var(--accent-rgb), 0.06) 0 1px, transparent 1px 4px);
 }
 
-body.has-wallpaper .desktop::before {
+body.has-wallpaper::before {
   background-image: var(--wallpaper-image);
   background-size: cover;
   background-repeat: no-repeat;
 }
 
-body.theme-dark.has-wallpaper .desktop::before {
+body.theme-dark.has-wallpaper::before {
   filter: brightness(0.55);
 }
 
@@ -621,6 +663,264 @@ body.theme-dark .side-dock {
 }
 
 /* ------------------------------------------------------------
+   Главное окно сайта
+   ------------------------------------------------------------ */
+
+body.is-kiosk .side-dock,
+body.is-kiosk .hotkey-hints {
+  display: none !important;
+}
+
+body.is-kiosk .window.is-kiosk {
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+}
+
+body.is-kiosk .window.is-kiosk .window-controls,
+body.is-kiosk .window.is-kiosk .win-grip {
+  display: none;
+}
+
+body.is-kiosk .window.is-kiosk .window-header {
+  cursor: default;
+}
+
+body.is-kiosk .window.is-kiosk .window-spacer {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   Подсказки хоткеев (стиль hyprland)
+   ------------------------------------------------------------ */
+
+.hotkey-hints {
+  display: none;
+}
+
+body[data-style="hypr"] .hotkey-hints {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  background: var(--dock-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 900;
+}
+
+body[data-style="hypr"][data-dockmode="iphone"] .hotkey-hints {
+  bottom: calc(var(--dock-size) + 34px + env(safe-area-inset-bottom, 0px));
+}
+
+.hotkey-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--term-bg);
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.hotkey-hint:hover,
+.hotkey-hint:focus-visible {
+  background: var(--dock-hover-bg);
+  border-color: var(--sand-accent);
+  outline: none;
+}
+
+.hotkey-hint kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface-mute);
+  color: var(--text-dim);
+}
+
+/* ------------------------------------------------------------
+   Стили оболочки: windows 98, aero, hyprland
+   ------------------------------------------------------------ */
+
+body[data-style="win98"] .window {
+  border: 2px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--surface-paper);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+body[data-style="win98"] .window.is-focused {
+  border-color: var(--sand-accent);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+body[data-style="win98"] .window-header {
+  min-height: 30px;
+  padding: 2px 8px;
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--border-dark);
+}
+
+body[data-style="win98"] .window-title {
+  text-align: left;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+body[data-style="win98"] .window-spacer {
+  display: none;
+}
+
+body[data-style="win98"] .win-btn {
+  width: 20px;
+  height: 18px;
+  margin-left: 2px;
+  border: 1px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--surface-mute);
+}
+
+body[data-style="win98"] .win-btn::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+}
+
+body[data-style="win98"] .side-dock {
+  border: 2px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--surface-mute);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
+}
+
+body[data-style="win98"] .dock-app {
+  border: 1px solid var(--border-dark);
+  border-radius: 0;
+  background: var(--surface-paper);
+}
+
+body[data-style="win98"] .dock-app:hover,
+body[data-style="win98"] .dock-app:focus-visible {
+  transform: none;
+  box-shadow: none;
+  background: var(--dock-hover-bg);
+}
+
+body[data-style="win98"] .dock-tooltip,
+body[data-style="win98"] .hotkey-hints,
+body[data-style="win98"] .hotkey-hint {
+  border-radius: 0;
+}
+
+body[data-style="aero"] .window {
+  border-radius: 12px 12px 9px 9px;
+  border-color: var(--border-dark);
+  background: var(--term-bg);
+  box-shadow: 0 18px 50px rgba(var(--accent-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+body[data-style="aero"] .window-header {
+  min-height: 36px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), var(--header-bg) 65%);
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+body[data-style="aero"] .win-btn::before {
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+body[data-style="aero"] .side-dock {
+  border-radius: 18px;
+  border-color: var(--border-dark);
+  background: var(--dock-bg);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: 0 12px 34px rgba(var(--accent-rgb), 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+body[data-style="aero"] .dock-app {
+  border-radius: 11px;
+  background: linear-gradient(180deg, var(--surface-paper), var(--term-bg));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+body[data-style="hypr"] .window {
+  border-radius: 0;
+  border-color: var(--border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+body[data-style="hypr"] .window.is-focused {
+  border-color: var(--sand-accent);
+  box-shadow: 0 0 0 1px var(--sand-accent), 0 10px 30px rgba(0, 0, 0, 0.22);
+}
+
+body[data-style="hypr"] .window-header {
+  min-height: 34px;
+  background: transparent;
+  border-bottom-color: var(--border);
+}
+
+body[data-style="hypr"] .window-title {
+  text-align: left;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+
+body[data-style="hypr"] .window-spacer {
+  display: none;
+}
+
+body[data-style="hypr"] .win-btn::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+body[data-style="hypr"] .side-dock {
+  border-radius: 10px;
+  border-color: var(--border);
+  background: var(--dock-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+body[data-style="hypr"] .dock-app {
+  border-radius: 7px;
+  border-color: transparent;
+  background: transparent;
+}
+
+body[data-style="hypr"] .dock-app:hover,
+body[data-style="hypr"] .dock-app:focus-visible {
+  background: var(--dock-hover-bg);
+}
+
+body[data-style="hypr"] .dock-tooltip {
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------
    Телефон
    ------------------------------------------------------------ */
 
@@ -640,9 +940,9 @@ body.theme-dark .side-dock {
     width: calc(100vw - 16px) !important;
     max-width: calc(100vw - 16px) !important;
     left: 8px !important;
-    top: 8px !important;
-    height: calc(100dvh - 86px) !important;
-    max-height: calc(100dvh - 86px) !important;
+    top: max(8px, env(safe-area-inset-top)) !important;
+    height: calc(100dvh - 86px - env(safe-area-inset-bottom, 0px)) !important;
+    max-height: calc(100dvh - 86px - env(safe-area-inset-bottom, 0px)) !important;
     transform-origin: 50% 100%;
     transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.28s ease !important;
   }
@@ -674,11 +974,12 @@ body.theme-dark .side-dock {
   }
 
   .side-dock {
+    --dock-size: 36px;
     position: fixed;
     left: 50%;
     right: auto;
     top: auto;
-    bottom: 10px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
     flex-direction: row;
     padding: 5px 7px;
@@ -697,8 +998,8 @@ body.theme-dark .side-dock {
   }
 
   .dock-app {
-    width: 36px;
-    height: 36px;
+    width: min(var(--dock-size), 40px);
+    height: min(var(--dock-size), 40px);
     flex: none;
   }
 
@@ -723,6 +1024,22 @@ body.theme-dark .side-dock {
 
   .window-body {
     -webkit-overflow-scrolling: touch;
+  }
+
+  .hotkey-hints {
+    display: none !important;
+  }
+
+  body.is-kiosk .window.is-kiosk {
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0;
+    border-radius: 0;
+    transform: none !important;
   }
 }
 
