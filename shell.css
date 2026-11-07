@@ -434,7 +434,7 @@ body.no-tooltips .dock-tooltip {
   display: none;
 }
 
-/* Док как на айфоне: полоса во всю ширину снизу */
+/* Прикреплённый док: полоса во всю длину у края экрана */
 body[data-dockmode="iphone"] .side-dock {
   left: 0;
   right: 0;

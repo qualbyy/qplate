@@ -262,7 +262,7 @@ window.DATA = {
     { id: "tooltips", type: "toggle", group: "вид", label: "подсказки дока", hint: "названия приложений при наведении", value: true },
     { id: "bigtext", type: "toggle", group: "вид", label: "крупный текст", hint: "чуть больше шрифта во всех окнах", value: false },
     { id: "style", type: "select", group: "вид", label: "стиль интерфейса", hint: "оболочка окон и дока; ключевой цвет не меняется", value: "desktop", options: [["desktop", "как сейчас"], ["win98", "windows 98"], ["aero", "aero · windows 7"], ["hypr", "hyprland · минимализм"]] },
-    { id: "dockmode", type: "select", group: "док", label: "режим дока", hint: "плавающий справа или полоса во всю ширину снизу", value: "float", options: [["float", "плавающий"], ["iphone", "как на айфоне"]] },
+    { id: "dockmode", type: "select", group: "док", label: "режим дока", hint: "плавающий или прикреплённый к краю экрана во всю длину", value: "float", options: [["float", "плавающий"], ["iphone", "прикрепленный"]] },
     { id: "docksize", type: "number", group: "док", label: "размер иконок дока", hint: "28–64 точек", value: 44, min: 28, max: 64 },
     { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "dots", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
     { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата на рабочем столе", value: true },
