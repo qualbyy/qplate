@@ -1506,7 +1506,7 @@
 
   function settingsItemCard(item) {
     const card = el("div", "ed-card");
-    card.appendChild(el("div", "ed-card-title", item.label || item.id));
+    card.appendChild(el("div", "ed-card-title", (item.group ? item.group + " · " : "") + (item.label || item.id)));
 
     const valueRow = el("div", "ed-row");
     valueRow.appendChild(el("span", "ed-label", "значение"));
@@ -1567,6 +1567,14 @@
       });
     }
 
+    const onlyRow = el("div", "ed-row");
+    onlyRow.appendChild(el("span", "ed-label", "только при стиле hyprland"));
+    onlyRow.appendChild(stateButton(item.only === "hypr", "да", "нет", function (on) {
+      if (on) item.only = "hypr";
+      else delete item.only;
+    }));
+    card.appendChild(onlyRow);
+
     const hideRow = el("div", "ed-row");
     hideRow.appendChild(el("span", "ed-label", "пункт в настройках"));
     hideRow.appendChild(stateButton(item.hidden === true, "скрыт", "показан", function (on) {
@@ -1583,7 +1591,7 @@
     box.style.border = "0";
     box.style.padding = "0";
 
-    box.appendChild(el("div", "ed-hint", "значения станут начальными для готового сайта. заблокированное нельзя будет выбрать, скрытое исчезнет из окна настроек."));
+    box.appendChild(el("div", "ed-hint", "значения станут начальными для готового сайта. заблокированное нельзя будет выбрать, скрытое исчезнет из окна настроек. новые пункты — док, сторона дока, подсказки hypr и их размер — правятся здесь же."));
 
     if (!Array.isArray(draft.theme.locked)) draft.theme.locked = [];
 
@@ -1609,11 +1617,7 @@
     colors.appendChild(custom);
     box.appendChild(colors);
 
-    const styleItem = draft.settings.filter(function (s) { return s.id === "style"; })[0];
-    const styleNow = styleItem ? styleItem.value : "desktop";
-
     draft.settings.forEach(function (item) {
-      if (item.only && styleNow !== item.only) return;
       box.appendChild(settingsItemCard(item));
     });
 
