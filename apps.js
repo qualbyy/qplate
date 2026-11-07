@@ -694,6 +694,7 @@
     const path = [data.root];
     let blobUrl = "";
     let viewToken = 0;
+    let bigEl = null;
 
     function releaseBlob() {
       if (blobUrl) {
@@ -702,8 +703,61 @@
       }
     }
 
+    function hideBig() {
+      if (bigEl && bigEl.parentNode) bigEl.parentNode.removeChild(bigEl);
+      bigEl = null;
+    }
+
+    function openBig(file, url) {
+      hideBig();
+
+      const kind = fileKind(file);
+      const box = make("div", "file-big");
+      const panel = make("div", "file-big-panel");
+      const head = make("div", "file-big-head");
+      head.appendChild(make("span", "file-big-name", file.name || "файл"));
+
+      const close = make("button", "preview-close", "закрыть");
+      close.type = "button";
+      close.addEventListener("click", hideBig);
+      head.appendChild(close);
+      panel.appendChild(head);
+
+      const content = make("div", "file-big-content");
+
+      if (kind === "image") {
+        const img = make("img", "file-preview-image");
+        img.src = url;
+        img.alt = file.name || "картинка";
+        content.appendChild(img);
+      } else if (kind === "audio") {
+        const audio = make("audio", "file-preview-audio");
+        audio.controls = true;
+        audio.autoplay = true;
+        audio.src = url;
+        content.appendChild(audio);
+      } else if (kind === "pdf") {
+        const frame = make("iframe", "file-preview-pdf");
+        frame.src = url;
+        frame.title = file.name || "pdf";
+        content.appendChild(frame);
+      } else {
+        content.appendChild(make("pre", "file-preview-text", file.content !== undefined ? String(file.content) : "(пусто)"));
+      }
+
+      panel.appendChild(content);
+      box.appendChild(panel);
+      box.addEventListener("click", function (e) {
+        if (e.target === box) hideBig();
+      });
+
+      app.appendChild(box);
+      bigEl = box;
+    }
+
     function hidePreview() {
       viewToken++;
+      hideBig();
       releaseBlob();
       preview.hidden = true;
       previewBody.innerHTML = "";
@@ -713,10 +767,11 @@
     function addActions(file, url) {
       const actions = make("div", "file-preview-actions");
 
-      const open = make("a", "preview-action", "открыть");
-      open.href = url;
-      open.target = "_blank";
-      open.rel = "noopener";
+      const open = make("button", "preview-action", "открыть");
+      open.type = "button";
+      open.addEventListener("click", function () {
+        openBig(file, url);
+      });
 
       const save = make("a", "preview-action", "скачать");
       save.href = url;
@@ -889,6 +944,7 @@
       },
       onDestroy: function () {
         viewToken++;
+        hideBig();
         releaseBlob();
         cleanup.disconnect();
       }
