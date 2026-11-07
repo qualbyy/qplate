@@ -30,6 +30,7 @@
   const state = {};
 
   let highestZ = 10;
+  let restoredOpen = null;
   let lastFocused = null;
   let dragState = null;
   let settingsState = {};
@@ -671,7 +672,9 @@
     win.setAttribute("aria-label", cfg.title);
     win.style.width = (cfg.width || 620) + "px";
 
-    if (!cfg.open) {
+    const wasOpen = restoredOpen ? restoredOpen.indexOf(cfg.id) >= 0 : cfg.open;
+
+    if (!wasOpen) {
       win.classList.add("is-minimized");
       win.setAttribute("aria-hidden", "true");
     }
@@ -1430,6 +1433,8 @@
         openWindow(pinned.id);
       }
     } else {
+      restoredOpen = loadOpenState();
+
       DATA.windows.forEach(function (cfg) {
         configs.set(cfg.id, cfg);
         buildWindow(cfg);
@@ -1437,20 +1442,15 @@
 
       buildDock();
 
-      const savedOpen = loadOpenState();
-
       DATA.windows.forEach(function (cfg) {
-        const shouldOpen = savedOpen ? savedOpen.indexOf(cfg.id) >= 0 : cfg.open;
-        if (shouldOpen) openWindow(cfg.id);
+        if (restoredOpen && restoredOpen.indexOf(cfg.id) >= 0) openWindow(cfg.id);
       });
 
-      DATA.windows.forEach(function (cfg) {
-        if (state[cfg.id]) return;
-        const win = windows.get(cfg.id);
-        if (!win) return;
-        win.classList.add("is-minimized");
-        win.setAttribute("aria-hidden", "true");
-      });
+      if (!restoredOpen) {
+        DATA.windows.forEach(function (cfg) {
+          if (cfg.open) openWindow(cfg.id);
+        });
+      }
     }
 
     buildHotkeyHints();
