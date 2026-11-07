@@ -1616,15 +1616,40 @@
       if (groups.indexOf(name) < 0) groups.push(name);
     });
 
-    groups.forEach(function (groupName) {
-      if (groupName) app.appendChild(make("div", "settings-group", groupName));
+    const tabs = make("div", "settings-tabs");
+    const panel = make("div", "settings-panel");
+    let activeGroup = groups[0] || "";
 
+    function fillGroup() {
+      panel.textContent = "";
       items.filter(function (item) {
-        return (item.group || "") === groupName;
+        return (item.group || "") === activeGroup;
       }).forEach(function (item) {
-        app.appendChild(settingRow(item));
+        panel.appendChild(settingRow(item));
       });
+      tabs.querySelectorAll(".settings-tab").forEach(function (btn) {
+        btn.classList.toggle("is-active", btn.dataset.group === activeGroup);
+        btn.setAttribute("aria-selected", btn.dataset.group === activeGroup ? "true" : "false");
+      });
+    }
+
+    groups.forEach(function (groupName) {
+      const btn = make("button", "settings-tab", groupName || "основное");
+      btn.type = "button";
+      btn.setAttribute("role", "tab");
+      btn.dataset.group = groupName;
+      btn.addEventListener("click", function () {
+        activeGroup = groupName;
+        fillGroup();
+      });
+      tabs.appendChild(btn);
     });
+
+    if (groups.length) {
+      app.appendChild(tabs);
+      app.appendChild(panel);
+      fillGroup();
+    }
 
     const reset = make("button", "settings-reset", "сбросить настройки");
     reset.type = "button";

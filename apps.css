@@ -1391,6 +1391,54 @@
   padding: 16px 2px 4px;
 }
 
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-dark);
+  scrollbar-width: none;
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tab {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.settings-tab:hover {
+  color: var(--text);
+  background: var(--surface-mute);
+}
+
+.settings-tab.is-active {
+  color: var(--text);
+  background: var(--surface-paper);
+  border-color: var(--border-dark);
+}
+
+.settings-tab:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Выпадающий список */
 .setting-select {
   flex: none;
