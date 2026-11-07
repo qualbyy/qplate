@@ -806,6 +806,43 @@
       renderPanel();
     }
 
+    function importNode(parent) {
+      const input = document.createElement("input");
+      input.type = "file";
+
+      input.addEventListener("change", function () {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        const kind = fileKind({ name: file.name });
+        if (file.size > 2 * 1024 * 1024) setStatus("файл больше 2 МБ — может не сохраниться в черновике", "err");
+
+        const reader = new FileReader();
+
+        reader.onload = function () {
+          const value = String(reader.result || "");
+          const node = { name: file.name, type: "file", kind: kind };
+          if (kind === "text") node.content = value;
+          else node.src = value;
+
+          if (!Array.isArray(parent.children)) parent.children = [];
+          parent.children.push(node);
+          queueSave();
+          renderPanel();
+          setStatus("файл «" + file.name + "» добавлен");
+        };
+
+        reader.onerror = function () {
+          setStatus("не удалось прочитать файл", "err");
+        };
+
+        if (kind === "text") reader.readAsText(file);
+        else reader.readAsDataURL(file);
+      });
+
+      input.click();
+    }
+
     function actionRow(parent) {
       const row = el("div", "ed-tree-actions");
 
@@ -817,6 +854,13 @@
         });
         row.appendChild(btn);
       });
+
+      const imp = el("button", "ed-btn", "импортировать свой");
+      imp.type = "button";
+      imp.addEventListener("click", function () {
+        importNode(parent);
+      });
+      row.appendChild(imp);
 
       return row;
     }
