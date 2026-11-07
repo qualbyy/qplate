@@ -51,6 +51,21 @@
   padding: 0;
 }
 
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+::-moz-selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+input, textarea, .window-body, .content-block, .note-body, .browser-view, .app-page {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 html,
 body {
   height: 100%;

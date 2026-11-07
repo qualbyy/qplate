@@ -1733,7 +1733,16 @@
     const reset = make("button", "settings-reset", "сбросить настройки");
     reset.type = "button";
     reset.addEventListener("click", function () {
-      ["desktop-settings-v1", "desktop-accent-v1", "desktop-wallpaper-v1"].forEach(function (key) {
+      [
+        "desktop-settings-v1",
+        "desktop-accent-v1",
+        "desktop-theme-accent-v1",
+        "desktop-wallpaper-v1",
+        "desktop-project-v1",
+        "desktop-window-positions-v1",
+        "desktop-window-state-v1",
+        "desktop-clock-pos-v1"
+      ].forEach(function (key) {
         try {
           localStorage.removeItem(key);
         } catch (err) {

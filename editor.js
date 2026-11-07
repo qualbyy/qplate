@@ -16,6 +16,8 @@
   let folderHandle = null;
   let statusTimer = null;
   let saveTimer = null;
+  /* Пока плашка пресета на экране, обычные статусы её не затирают. */
+  let noticeActive = false;
 
   /* ---------- Мелкие помощники ---------- */
 
@@ -58,14 +60,124 @@
     if (!bodyRef) return;
     const node = bodyRef.querySelector(".ed-status");
     if (!node) return;
+    if (noticeActive && kind !== "err") return;
+    if (noticeActive) noticeActive = false;
 
     node.textContent = text;
     node.className = "ed-status show " + (kind || "");
+    node.style.display = "";
     window.clearTimeout(statusTimer);
     statusTimer = window.setTimeout(function () {
       node.className = "ed-status";
       node.textContent = "";
     }, 5000);
+  }
+
+  function showPresetNotice(presetName) {
+    if (!bodyRef) return;
+    const node = bodyRef.querySelector(".ed-status");
+    if (!node) return;
+
+    node.innerHTML = "";
+    node.className = "ed-status show ok";
+    noticeActive = true;
+    node.style.display = "flex";
+    node.style.alignItems = "center";
+    node.style.justifyContent = "space-between";
+    node.style.gap = "10px";
+
+    const textSpan = el("span", null, "применён пресет «" + presetName + "»! ");
+    const rightBox = el("div", "ed-row");
+    rightBox.style.display = "flex";
+    rightBox.style.alignItems = "center";
+    rightBox.style.gap = "6px";
+
+    const reloadBtn = el("button", "ed-btn ed-btn-main", "перезагрузить сайт");
+    reloadBtn.type = "button";
+    reloadBtn.style.padding = "2px 8px";
+    reloadBtn.style.fontSize = "11px";
+    reloadBtn.addEventListener("click", function () {
+      window.location.reload();
+    });
+
+    const closeBtn = el("button", "ed-mini", "×");
+    closeBtn.type = "button";
+    closeBtn.addEventListener("click", function () {
+      noticeActive = false;
+      window.clearTimeout(statusTimer);
+      node.className = "ed-status";
+      node.textContent = "";
+      node.style.display = "";
+    });
+
+    rightBox.appendChild(reloadBtn);
+    rightBox.appendChild(closeBtn);
+    node.appendChild(textSpan);
+    node.appendChild(rightBox);
+
+    window.clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(function () {
+      noticeActive = false;
+      node.className = "ed-status";
+      node.textContent = "";
+      node.style.display = "";
+    }, 15000);
+  }
+
+  /* Своё окно подтверждения вместо window.confirm: браузерные диалоги
+     блокируются, и кнопки молча ничего не делают. */
+  function edConfirm(message, opts) {
+    const options = opts || {};
+    return new Promise(function (resolve) {
+      const overlay = el("div", "ed-dialog");
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+
+      const card = el("div", "ed-dialog-card");
+      card.appendChild(el("div", "ed-dialog-title", options.title || "подтверждение"));
+      card.appendChild(el("div", "ed-dialog-text", message));
+
+      const row = el("div", "ed-dialog-actions");
+      const cancel = el("button", "ed-btn", options.cancel || "отмена");
+      cancel.type = "button";
+
+      const ok = el("button", "ed-btn " + (options.danger === false ? "ed-btn-main" : "ed-btn-danger"), options.ok || "подтвердить");
+      ok.type = "button";
+
+      let done = false;
+      function finish(result) {
+        if (done) return;
+        done = true;
+        document.removeEventListener("keydown", onKey, true);
+        overlay.remove();
+        resolve(result);
+      }
+
+      function onKey(ev) {
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          finish(false);
+        } else if (ev.key === "Enter") {
+          ev.preventDefault();
+          finish(true);
+        }
+      }
+
+      cancel.addEventListener("click", function () { finish(false); });
+      ok.addEventListener("click", function () { finish(true); });
+      overlay.addEventListener("mousedown", function (ev) {
+        if (ev.target === overlay) finish(false);
+      });
+      document.addEventListener("keydown", onKey, true);
+
+      row.appendChild(cancel);
+      row.appendChild(ok);
+      card.appendChild(row);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      window.requestAnimationFrame(function () { overlay.classList.add("is-on"); });
+      ok.focus();
+    });
   }
 
   /* ---------- Данные черновика ---------- */
@@ -210,6 +322,24 @@
     }
   }
 
+  function syncLocalStorageWithDraft() {
+    try {
+      const sState = {};
+      (draft.settings || []).forEach(function (item) {
+        sState[item.id] = item.value;
+      });
+      localStorage.setItem("desktop-settings-v1", JSON.stringify(sState));
+
+      if (draft.theme && draft.theme.accent) {
+        const col = draft.theme.accent;
+        const preset = (draft.theme.presets || []).find(function (p) { return p.id === col; });
+        localStorage.setItem("desktop-accent-v1", preset ? preset.color : col);
+      }
+    } catch (e) {
+      /* localStorage может быть недоступен */
+    }
+  }
+
   function commit() {
     DATA.meta = Object.assign({}, DATA.meta, draft.meta);
     DATA.notes = clone(draft.notes);
@@ -233,6 +363,7 @@
     DATA.music = clone(draft.music);
     DATA.settings = clone(draft.settings);
     DATA.theme = Object.assign({}, DATA.theme, draft.theme);
+    syncLocalStorageWithDraft();
   }
 
   function applyDraft() {
@@ -242,13 +373,35 @@
     setStatus("применено: сайт обновился", "ok");
   }
 
-  function resetAll() {
-    if (!window.confirm("сбросить все изменения? сайт вернётся к исходным данным, черновик будет удалён.")) {
-      return;
-    }
+  /* Возвращает набор открытых окон к значениям data.js (open: true). */
+  function restoreDefaultLayout() {
+    if (!window.WindowManager) return;
+    DATA.windows.forEach(function (w) {
+      if (!w || w.type === "editor") return;
+      if (w.open === true) {
+        if (window.WindowManager.open) window.WindowManager.open(w.id);
+      } else if (window.WindowManager.close) {
+        window.WindowManager.close(w.id);
+      }
+    });
+  }
+
+  async function resetAll() {
+    const sure = await edConfirm("сбросить все изменения? сайт вернётся к исходным данным, черновик будет удалён.", {
+      title: "сбросить всё",
+      ok: "сбросить"
+    });
+    if (!sure) return;
 
     try {
       localStorage.removeItem(STORE);
+      localStorage.removeItem("desktop-settings-v1");
+      localStorage.removeItem("desktop-accent-v1");
+      localStorage.removeItem("desktop-theme-accent-v1");
+      localStorage.removeItem("desktop-wallpaper-v1");
+      localStorage.removeItem("desktop-window-positions-v1");
+      localStorage.removeItem("desktop-window-state-v1");
+      localStorage.removeItem("desktop-clock-pos-v1");
     } catch (err) {
       /* хранилище может быть недоступно */
     }
@@ -256,6 +409,7 @@
     draft = normalizeDraft(draftFromData(ORIGINAL));
     commit();
     if (window.WindowManager && WindowManager.sync) WindowManager.sync();
+    restoreDefaultLayout();
     setStatus("сброшено: вернулись исходные данные сайта", "ok");
   }
 
@@ -509,21 +663,125 @@
     wrap.appendChild(top);
 
     const isHtml = item.mode === "html";
-    const textOpts = { multiline: true, code: isHtml, rows: 9 };
+    let showPreview = false;
+
+    const editorBox = el("div", "ed-field");
+
+    const labelRow = el("div", "ed-row");
+    labelRow.style.justifyContent = "space-between";
+    labelRow.style.alignItems = "center";
+    labelRow.style.marginBottom = "6px";
+
+    const label = el("span", "ed-label", isHtml ? "html-код" : "текст");
+    labelRow.appendChild(label);
+
+    const labelActions = el("div", "ed-row");
+    labelActions.style.display = "flex";
+    labelActions.style.alignItems = "center";
+    labelActions.style.gap = "6px";
 
     if (isHtml) {
-      textOpts.pick = {
-        accept: ".html,.htm,text/html",
-        apply: function (value) {
-          item.html = value;
-        }
-      };
+      const pick = pickButton(".html,.htm,text/html", function (val) {
+        item.html = val;
+        textarea.value = val;
+        queueSave();
+      });
+      pick.className = "ed-fmt-btn";
+      pick.style.height = "auto";
+      pick.style.padding = "3px 8px";
+      labelActions.appendChild(pick);
     }
 
-    wrap.appendChild(field(isHtml ? "html-код" : "текст", isHtml ? item.html : item.text, function (value) {
-      if (isHtml) item.html = value;
-      else item.text = value;
-    }, textOpts));
+    const previewBtn = el("button", "ed-fmt-btn", "предпросмотр");
+    previewBtn.type = "button";
+    labelActions.appendChild(previewBtn);
+    labelRow.appendChild(labelActions);
+    editorBox.appendChild(labelRow);
+
+    let fmtBar = null;
+    const textarea = el("textarea", "ed-textarea" + (isHtml ? " ed-code" : ""));
+    textarea.value = (isHtml ? item.html : item.text) || "";
+    textarea.rows = 9;
+
+    const previewArea = el("div", "ed-preview-box");
+    previewArea.style.display = "none";
+
+    function updatePreview() {
+      if (!isHtml) {
+        previewArea.innerHTML = "";
+        const val = String(item.text || "").trim();
+        if (!val) {
+          previewArea.innerHTML = '<span style="color:var(--text-dim);font-style:italic;">текст пуст</span>';
+        } else {
+          val.split(/\n{2,}/).forEach(function (part) {
+            const p = el("p", "content-text", part.trim());
+            p.style.margin = "0 0 8px 0";
+            previewArea.appendChild(p);
+          });
+        }
+      } else {
+        previewArea.innerHTML = item.html || '<span style="color:var(--text-dim);font-style:italic;">код пуст</span>';
+      }
+    }
+
+    function wrapSelection(before, after) {
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const val = textarea.value;
+      const selected = val.substring(start, end) || "текст";
+      const replacement = before + selected + after;
+      textarea.value = val.substring(0, start) + replacement + val.substring(end);
+      textarea.focus();
+      textarea.selectionStart = start + before.length;
+      textarea.selectionEnd = start + before.length + selected.length;
+      if (isHtml) item.html = textarea.value;
+      else item.text = textarea.value;
+      queueSave();
+    }
+
+    if (isHtml) {
+      fmtBar = el("div", "ed-fmt-bar");
+      const tools = [
+        ["Ж", "<b>", "</b>", "жирный"],
+        ["К", "<i>", "</i>", "курсив"],
+        ["Код", "<code>", "</code>", "код"],
+        ["Ссылка", '<a href="https://">', "</a>", "ссылка"],
+        ["Цитата", "<blockquote>", "</blockquote>", "цитата"],
+        ["Список", "<ul>\n  <li>", "</li>\n</ul>", "список"],
+        ["Заголовок", "<h3>", "</h3>", "подзаголовок"]
+      ];
+
+      tools.forEach(function (t) {
+        const btn = el("button", "ed-fmt-btn", t[0]);
+        btn.type = "button";
+        btn.title = t[3];
+        btn.addEventListener("click", function () {
+          wrapSelection(t[1], t[2]);
+        });
+        fmtBar.appendChild(btn);
+      });
+      editorBox.appendChild(fmtBar);
+    }
+
+    previewBtn.addEventListener("click", function () {
+      showPreview = !showPreview;
+      previewBtn.classList.toggle("active", showPreview);
+      previewBtn.textContent = showPreview ? "редактор" : "предпросмотр";
+      textarea.style.display = showPreview ? "none" : "";
+      if (fmtBar) fmtBar.style.display = showPreview ? "none" : "flex";
+      previewArea.style.display = showPreview ? "block" : "none";
+      if (showPreview) updatePreview();
+    });
+
+    textarea.addEventListener("input", function () {
+      if (isHtml) item.html = textarea.value;
+      else item.text = textarea.value;
+      queueSave();
+    });
+
+    editorBox.appendChild(textarea);
+    editorBox.appendChild(previewArea);
+    wrap.appendChild(editorBox);
 
     return wrap;
   }
@@ -586,13 +844,58 @@
     return wrap;
   }
 
+  /* ---------- Кнопки перемещения ---------- */
+
+  function orderButtons(items, index, renderFn) {
+    const wrap = el("div", "ed-row");
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "4px";
+
+    const up = el("button", "ed-btn", "▲");
+    up.type = "button";
+    up.title = "переместить выше";
+    up.disabled = index === 0;
+    up.addEventListener("click", function () {
+      if (index > 0) {
+        const temp = items[index];
+        items[index] = items[index - 1];
+        items[index - 1] = temp;
+        queueSave();
+        (renderFn || renderPanel)();
+      }
+    });
+    wrap.appendChild(up);
+
+    const down = el("button", "ed-btn", "▼");
+    down.type = "button";
+    down.title = "переместить ниже";
+    down.disabled = index >= items.length - 1;
+    down.addEventListener("click", function () {
+      if (index < items.length - 1) {
+        const temp = items[index];
+        items[index] = items[index + 1];
+        items[index + 1] = temp;
+        queueSave();
+        (renderFn || renderPanel)();
+      }
+    });
+    wrap.appendChild(down);
+
+    return wrap;
+  }
+
   /* ---------- Карточка записи ---------- */
 
-  function entryCard(item, kind, onDelete) {
+  function entryCard(item, kind, onDelete, items, index) {
     const card = el("div", "ed-card");
 
     const head = el("div", "ed-card-head");
     head.appendChild(el("span", "ed-card-title", kind === "note" ? "заметка" : kind === "page" ? "страница документа" : "вкладка браузера"));
+
+    if (items && typeof index === "number") {
+      head.appendChild(orderButtons(items, index));
+    }
 
     const del = el("button", "ed-btn ed-btn-danger", "удалить");
     del.type = "button";
@@ -642,7 +945,7 @@
     items.forEach(function (item, index) {
       box.appendChild(entryCard(item, kind, function () {
         items.splice(index, 1);
-      }));
+      }, items, index));
     });
 
     const add = el("button", "ed-add", addLabel);
@@ -660,6 +963,8 @@
   function projectTab() {
     const box = el("div", "ed-card");
     box.appendChild(el("div", "ed-card-title", "о сайте"));
+
+    box.appendChild(presetsBlock());
 
     box.appendChild(field("название сайта", draft.meta.title, function (value) {
       draft.meta.title = value;
@@ -688,6 +993,326 @@
     reset.addEventListener("click", resetAll);
     box.appendChild(reset);
 
+    return box;
+  }
+
+  /* Блок готовых шаблонов (пресетов) сайта */
+  function presetsBlock() {
+    const box = el("div", "ed-card");
+    box.appendChild(el("div", "ed-card-title", "готовые пресеты сайта"));
+    box.appendChild(el("div", "ed-hint", "полностью преобразит тему, стиль, обои и порядок окон сайта в один клик:"));
+
+    const row = el("div", "ed-restore-list");
+    row.style.display = "flex";
+    row.style.flexWrap = "wrap";
+    row.style.gap = "8px";
+    row.style.marginTop = "8px";
+
+    function setSettingVal(key, val) {
+      const item = (draft.settings || []).find(function (s) { return s.id === key; });
+      if (item) item.value = val;
+    }
+
+    function ensureWindow(id) {
+      if (!draft.windows.some(function (w) { return w.id === id; })) {
+        const orig = (ORIGINAL.windows || []).find(function (w) { return w.id === id; });
+        if (orig) draft.windows.push(clone(orig));
+      }
+    }
+
+    const presets = [
+      {
+        id: "dev",
+        title: "портфолио разработчика",
+        desc: "стиль hyprland, тёмная тема, обои-сетка, терминал, проекты и стек технологий",
+        apply: function () {
+          draft.meta.title = "портфолио • developer";
+          draft.meta.name = "алексей • software engineer";
+          draft.meta.footer = "typescript • node.js • go • linux • web architecture";
+          setSettingVal("style", "hypr");
+          setSettingVal("theme", "dark");
+          setSettingVal("wallpaper", "grid");
+          setSettingVal("hints", true);
+          draft.theme.accent = "#50fa7b";
+
+          ["term", "files", "browser", "notes", "settings"].forEach(ensureWindow);
+          draft.windows.forEach(function (w) { w.pinned = false; });
+          const order = ["term", "files", "browser", "notes", "settings", "editor"];
+          draft.windows.sort(function (a, b) {
+            const ia = order.indexOf(a.id);
+            const ib = order.indexOf(b.id);
+            if (ia >= 0 && ib >= 0) return ia - ib;
+            if (ia >= 0) return -1;
+            if (ib >= 0) return 1;
+            return 0;
+          });
+
+          draft.notes = [
+            contentEntry({
+              title: "стек и технологии",
+              mode: "html",
+              html: "<p><b>языки:</b> typescript, javascript, go, python, sql</p><p><b>технологии:</b> react, node.js, docker, postgresql, tailwind</p><blockquote>фокусируюсь на быстродействии, чистой архитектуре и zero-dependency решениях.</blockquote>",
+              links: []
+            }, false),
+            contentEntry({
+              title: "принципы разработки",
+              mode: "html",
+              html: "<p>• понятный и тестируемый код превыше оверинжиниринга<br>• local-first и приватность пользовательских данных<br>• надежные ci/cd пайплайны и автоматизация</p>",
+              links: []
+            }, false)
+          ];
+          draft.notes[0].date = today();
+          draft.notes[1].date = today();
+
+          draft.browser.tabs = [
+            (function () {
+              const tab = contentEntry({
+                title: "проекты",
+                mode: "html",
+                html: "<h3>1. qplate desktop</h3><p>легковесный рабочий стол в браузере без сборщиков и сторонних библиотек.</p><p><a href=\"#\">github</a> · <a href=\"#\">демо</a></p><hr style=\"border:0;border-top:1px solid var(--border);margin:12px 0;\"><h3>2. micro-api engine</h3><p>микросервисный шлюз на go с минимальным временем отклика.</p><p><a href=\"#\">документация</a></p>",
+                links: []
+              }, true);
+              tab.id = "projects-tab";
+              tab.url = "https://github.com/developer";
+              tab.heading = "избранные open source работы";
+              return tab;
+            })()
+          ];
+
+          applyDraft();
+          if (window.WindowManager) {
+            if (window.WindowManager.close) {
+              DATA.windows.forEach(function (w) {
+                if (w.id !== "editor" && w.id !== "term" && w.id !== "browser") {
+                  window.WindowManager.close(w.id);
+                }
+              });
+            }
+            if (window.WindowManager.open) {
+              window.WindowManager.open("term");
+              window.WindowManager.open("browser");
+              window.WindowManager.focus("term");
+            }
+          }
+        }
+      },
+      {
+        id: "writer",
+        title: "блог и заметки",
+        desc: "классический десктоп, текстура бумаги, эссе и статьи",
+        apply: function () {
+          draft.meta.title = "блог и эссе • записки";
+          draft.meta.name = "анна • автор и редактор";
+          draft.meta.footer = "мысли о книгах, дизайне и тихой жизни в сети";
+          setSettingVal("style", "desktop");
+          setSettingVal("theme", "light");
+          setSettingVal("wallpaper", "paper");
+          draft.theme.accent = "#a07844";
+
+          ["pdf", "notes", "browser", "photos", "settings"].forEach(ensureWindow);
+          draft.windows.forEach(function (w) { w.pinned = false; });
+          const order = ["pdf", "notes", "browser", "photos", "settings", "editor"];
+          draft.windows.sort(function (a, b) {
+            const ia = order.indexOf(a.id);
+            const ib = order.indexOf(b.id);
+            if (ia >= 0 && ib >= 0) return ia - ib;
+            if (ia >= 0) return -1;
+            if (ib >= 0) return 1;
+            return 0;
+          });
+
+          draft.pdf.title = "сборник эссе";
+          draft.pdf.pages = [
+            contentEntry({
+              title: "манифест простоты",
+              mode: "html",
+              html: "<h3>о цифровом шуме</h3><p>современный интернет перегружен баннерами и сложными интерфейсами. но настоящее удовольствие от текста возвращается там, где остаётся только суть: буква, поля и воздух.</p><blockquote>простота — это не нехватка чего-то, а отсутствие лишнего.</blockquote><p>когда мы убираем лишнее, остаётся пространство для глубокого чтения и ясных мыслей.</p>",
+              links: []
+            }, true),
+            contentEntry({
+              title: "книжная полка",
+              mode: "html",
+              html: "<h3>что я читаю сейчас</h3><p>список книг, которые повлияли на моё видение дизайна и типографики:</p><ul><li>«облик книги» — ян чихольд</li><li>«дизайн привычных вещей» — дон норман</li><li>«тихий свет» — сборник очерков</li></ul>",
+              links: []
+            }, true)
+          ];
+
+          draft.notes = [
+            contentEntry({
+              title: "наблюдения за неделю",
+              mode: "text",
+              text: "заметила, как сильно меняется восприятие дня, если утро начинается без бесконечной ленты соцсетей.\n\nза чашкой кофе приходят самые ценные идеи для новых глав.",
+              links: []
+            }, false)
+          ];
+          draft.notes[0].date = today();
+
+          applyDraft();
+          if (window.WindowManager) {
+            if (window.WindowManager.close) {
+              DATA.windows.forEach(function (w) {
+                if (w.id !== "editor" && w.id !== "pdf" && w.id !== "notes") {
+                  window.WindowManager.close(w.id);
+                }
+              });
+            }
+            if (window.WindowManager.open) {
+              window.WindowManager.open("pdf");
+              window.WindowManager.open("notes");
+              window.WindowManager.focus("pdf");
+            }
+          }
+        }
+      },
+      {
+        id: "music",
+        title: "музыка и медиа",
+        desc: "стиль liquid glass, неоновые волны, плеер, треки и фото",
+        apply: function () {
+          draft.meta.title = "soundwave studio • beats & ambient";
+          draft.meta.name = "soundwave audio";
+          draft.meta.footer = "lo-fi beats, ambient soundscapes & modular synth sessions";
+          setSettingVal("style", "glass");
+          setSettingVal("theme", "dark");
+          setSettingVal("wallpaper", "waves");
+          draft.theme.accent = "#bd93f9";
+
+          ["music", "photos", "notes", "files", "settings"].forEach(ensureWindow);
+          draft.windows.forEach(function (w) { w.pinned = false; });
+          const order = ["music", "photos", "notes", "files", "settings", "editor"];
+          draft.windows.sort(function (a, b) {
+            const ia = order.indexOf(a.id);
+            const ib = order.indexOf(b.id);
+            if (ia >= 0 && ib >= 0) return ia - ib;
+            if (ia >= 0) return -1;
+            if (ib >= 0) return 1;
+            return 0;
+          });
+
+          draft.music.album = "midnight session (ep)";
+          draft.music.note = "слушайте на всех стриминговых платформах";
+          draft.music.tracks = [
+            { title: "01. midnight rain", artist: "soundwave", seconds: 194 },
+            { title: "02. neon boulevard", artist: "soundwave", seconds: 218 },
+            { title: "03. analog nostalgia", artist: "soundwave", seconds: 165 }
+          ];
+
+          draft.notes = [
+            contentEntry({
+              title: "стриминг и релизы",
+              mode: "html",
+              html: "<h3>слушать онлайн</h3><p>новый мини-альбом доступен на площадках:</p><ul><li><a href=\"#\">spotify</a></li><li><a href=\"#\">apple music</a></li><li><a href=\"#\">bandcamp</a></li><li><a href=\"#\">soundcloud</a></li></ul><blockquote>спасибо за прослушивание и поддержку независимой музыки!</blockquote>",
+              links: []
+            }, false)
+          ];
+          draft.notes[0].date = today();
+
+          applyDraft();
+          if (window.WindowManager) {
+            if (window.WindowManager.close) {
+              DATA.windows.forEach(function (w) {
+                if (w.id !== "editor" && w.id !== "music" && w.id !== "photos") {
+                  window.WindowManager.close(w.id);
+                }
+              });
+            }
+            if (window.WindowManager.open) {
+              window.WindowManager.open("music");
+              window.WindowManager.open("photos");
+              window.WindowManager.focus("music");
+            }
+          }
+        }
+      },
+      {
+        id: "card",
+        title: "одно главное окно (визитка)",
+        desc: "минималистичная визитка по центру экрана без дока",
+        apply: function () {
+          draft.meta.title = "визитка • bio";
+          draft.meta.name = "иван иванов";
+          draft.meta.footer = "кратко обо мне, проекты и способы связи";
+          setSettingVal("style", "desktop");
+          setSettingVal("theme", "dark");
+          setSettingVal("wallpaper", "dots");
+          draft.theme.accent = "#ff79c6";
+
+          ensureWindow("notes");
+          draft.windows.forEach(function (w) {
+            w.pinned = (w.id === "notes");
+          });
+
+          draft.notes = [
+            contentEntry({
+              title: "привет, я иван",
+              mode: "html",
+              html: "<h3>цифровой дизайнер и разработчик</h3><p>создаю минималистичные интерфейсы, типографику и аккуратные веб-сервисы.</p><blockquote>«хороший дизайн незаметен — он просто работает.»</blockquote><h3>связаться со мной</h3><ul><li>telegram: <a href=\"https://t.me/\">@username</a></li><li>github: <a href=\"https://github.com/\">github.com/username</a></li><li>почта: <a href=\"mailto:mail@example.com\">mail@example.com</a></li></ul>",
+              links: []
+            }, false)
+          ];
+          draft.notes[0].date = today();
+
+          applyDraft();
+          if (window.WindowManager) {
+            if (window.WindowManager.close) {
+              DATA.windows.forEach(function (w) {
+                if (w.id !== "editor" && w.id !== "notes") {
+                  window.WindowManager.close(w.id);
+                }
+              });
+            }
+            if (window.WindowManager.open) {
+              window.WindowManager.open("notes");
+              window.WindowManager.focus("notes");
+            }
+          }
+        }
+      },
+      {
+        id: "default",
+        title: "по умолчанию",
+        desc: "вернуть тему, стиль, обои, окна и содержимое к стандартным",
+        apply: function () {
+          draft = normalizeDraft(draftFromData(ORIGINAL));
+          try {
+            localStorage.removeItem("desktop-theme-accent-v1");
+            localStorage.removeItem("desktop-wallpaper-v1");
+            localStorage.removeItem("desktop-window-positions-v1");
+            localStorage.removeItem("desktop-window-state-v1");
+          } catch (err) {
+            /* хранилище может быть недоступно */
+          }
+          applyDraft();
+          restoreDefaultLayout();
+        }
+      }
+    ];
+
+    presets.forEach(function (p) {
+      const btn = el("button", "ed-btn", p.title);
+      btn.type = "button";
+      btn.title = p.desc;
+      btn.addEventListener("click", function () {
+        noticeActive = true;
+        let failed = null;
+        try {
+          p.apply();
+        } catch (err) {
+          failed = err;
+          noticeActive = false;
+        }
+        saveDraft();
+        renderPanel();
+        if (failed) {
+          setStatus("пресет «" + p.title + "» применился не полностью: " + failed.message, "err");
+        } else {
+          showPresetNotice(p.title);
+        }
+      });
+      row.appendChild(btn);
+    });
+
+    box.appendChild(row);
     return box;
   }
 
@@ -882,9 +1507,13 @@
 
       const del = el("button", "ed-btn ed-btn-danger", "удалить");
       del.type = "button";
-      del.addEventListener("click", function () {
+      del.addEventListener("click", async function () {
         if (node.type === "folder" && Array.isArray(node.children) && node.children.length) {
-          if (!window.confirm("удалить папку «" + (node.name || "без имени") + "» вместе с содержимым?")) return;
+          const sure = await edConfirm("удалить папку «" + (node.name || "без имени") + "» вместе с содержимым?", {
+            title: "удалить папку",
+            ok: "удалить"
+          });
+          if (!sure) return;
         }
 
         const index = Array.isArray(parent.children) ? parent.children.indexOf(node) : -1;
@@ -980,6 +1609,7 @@
 
       const head = el("div", "ed-card-head");
       head.appendChild(el("span", "ed-card-title", "фото " + (index + 1)));
+      head.appendChild(orderButtons(draft.photos, index));
       const del = el("button", "ed-btn ed-btn-danger", "удалить");
       del.type = "button";
       del.addEventListener("click", function () {
@@ -1063,6 +1693,7 @@
 
       const head = el("div", "ed-card-head");
       head.appendChild(el("span", "ed-card-title", "трек " + (index + 1)));
+      head.appendChild(orderButtons(draft.music.tracks, index));
       const del = el("button", "ed-btn ed-btn-danger", "удалить");
       del.type = "button";
       del.addEventListener("click", function () {
@@ -1294,10 +1925,14 @@
   }
 
   function appsTab() {
-    const wrap = el("div", "ed-card");
-    wrap.appendChild(el("div", "ed-card-title", "приложения на рабочем столе"));
+    const wrap = el("div", "ed-apps");
+    const head = el("div", "ed-card");
+    head.appendChild(el("div", "ed-card-title", "приложения на рабочем столе"));
+    head.appendChild(el("div", "ed-hint", "каждое приложение — отдельная карточка: порядок в доке, название, размер, иконка и содержимое."));
+    wrap.appendChild(head);
 
     draft.windows.forEach(function (win, index) {
+      const appCard = el("div", "ed-card ed-app-card");
       const row = el("div", "ed-app-row" + (win.type === "editor" ? " is-fixed" : ""));
 
       const icon = el("div", "ed-app-icon");
@@ -1308,6 +1943,56 @@
       info.appendChild(el("div", "ed-app-name", win.label || win.id));
       info.appendChild(el("div", "ed-app-type", "тип: " + (win.type || "неизвестно")));
       row.appendChild(info);
+
+      if (win.type !== "editor") {
+        const actions = el("div", "ed-row");
+        actions.style.marginLeft = "auto";
+        actions.style.display = "flex";
+        actions.style.alignItems = "center";
+        actions.style.gap = "4px";
+
+        const up = el("button", "ed-btn", "▲");
+        up.type = "button";
+        up.title = "переместить левее в доке";
+        up.disabled = index === 0;
+        up.addEventListener("click", function () {
+          if (index > 0) {
+            const temp = draft.windows[index];
+            draft.windows[index] = draft.windows[index - 1];
+            draft.windows[index - 1] = temp;
+            queueSave();
+            renderPanel();
+          }
+        });
+        actions.appendChild(up);
+
+        const down = el("button", "ed-btn", "▼");
+        down.type = "button";
+        down.title = "переместить правее в доке";
+        const nextIsEditor = index < draft.windows.length - 1 && draft.windows[index + 1].type === "editor";
+        down.disabled = index >= draft.windows.length - 1 || nextIsEditor;
+        down.addEventListener("click", function () {
+          if (index < draft.windows.length - 1 && !nextIsEditor) {
+            const temp = draft.windows[index];
+            draft.windows[index] = draft.windows[index + 1];
+            draft.windows[index + 1] = temp;
+            queueSave();
+            renderPanel();
+          }
+        });
+        actions.appendChild(down);
+
+        const del = el("button", "ed-btn ed-btn-danger", "удалить");
+        del.type = "button";
+        del.addEventListener("click", function () {
+          draft.windows.splice(index, 1);
+          queueSave();
+          renderPanel();
+        });
+        actions.appendChild(del);
+
+        row.appendChild(actions);
+      }
 
       const fields = el("div", "ed-app-fields");
       fields.style.flex = "1 1 100%";
@@ -1439,55 +2124,127 @@
       });
       fields.appendChild(ownBtn);
 
+      if (win.type === "page") {
+        if (!win.page) win.page = contentEntry({ title: win.title || "своё приложение" }, false);
+        const pageCard = el("div", "ed-field");
+        pageCard.style.marginTop = "8px";
+        pageCard.style.paddingTop = "8px";
+        pageCard.style.borderTop = "1px dashed var(--border)";
+        pageCard.appendChild(el("span", "ed-label", "текст и содержимое приложения:"));
+        pageCard.appendChild(contentEditor(win.page));
+        fields.appendChild(pageCard);
+      }
+
       row.appendChild(fields);
       row.style.flexWrap = "wrap";
       row.style.alignItems = "flex-start";
 
-      if (win.type !== "editor") {
-        const del = el("button", "ed-btn ed-btn-danger", "удалить");
-        del.type = "button";
-        del.addEventListener("click", function () {
-          draft.windows.splice(index, 1);
-          queueSave();
-          renderPanel();
-        });
-        row.appendChild(del);
-      }
-
-      wrap.appendChild(row);
+      appCard.appendChild(row);
+      wrap.appendChild(appCard);
     });
 
-    const addPage = el("button", "ed-add", "+ своя страница");
+    const addCard = el("div", "ed-card");
+    addCard.appendChild(el("div", "ed-card-title", "добавить приложение"));
+    addCard.appendChild(el("div", "ed-hint", "своя страница-приложение появится в доке отдельным окном."));
+
+    const addRow = el("div", "ed-restore-list");
+    addRow.style.display = "flex";
+    addRow.style.flexWrap = "wrap";
+    addRow.style.gap = "8px";
+
+    const addPage = el("button", "ed-add", "+ своё приложение");
     addPage.type = "button";
+    addPage.style.alignSelf = "auto";
     addPage.addEventListener("click", function () {
       let index = 1;
       while (draft.windows.some(function (win) { return win.id === "page" + index; })) index += 1;
       draft.windows.push({
         id: "page" + index,
         type: "page",
-        title: "своя страница",
-        label: "страница " + index,
+        title: "своё приложение",
+        label: "приложение " + index,
         iconKey: "pdf",
         width: 620,
-        page: contentEntry({ title: "своя страница" }, false)
+        page: contentEntry({ title: "своё приложение" }, false)
       });
       queueSave();
       renderPanel();
     });
-    wrap.appendChild(addPage);
+    addRow.appendChild(addPage);
+    addCard.appendChild(addRow);
+    wrap.appendChild(addCard);
 
-    const empty = draft.windows.filter(function (win) {
-      return win.type === "page";
+    const missingBuiltins = (ORIGINAL.windows || []).filter(function (orig) {
+      if (orig.type === "editor") return false;
+      return !draft.windows.some(function (w) { return w.id === orig.id; });
     });
 
-    if (empty.length) {
-      wrap.appendChild(el("div", "ed-card-title", "содержимое своих страниц"));
-      empty.forEach(function (win) {
-        wrap.appendChild(entryCard(win.page, "page", function () {
-          const at = draft.windows.indexOf(win);
-          if (at >= 0) draft.windows.splice(at, 1);
-        }));
+    if (missingBuiltins.length > 0) {
+      const restoreCard = el("div", "ed-card");
+      restoreCard.style.marginTop = "14px";
+      restoreCard.appendChild(el("div", "ed-card-title", "удалённые встроенные приложения"));
+      restoreCard.appendChild(el("div", "ed-hint", "вы можете вернуть удалённые стандартные окна обратно на рабочий стол:"));
+
+      const list = el("div", "ed-restore-list");
+      list.style.display = "flex";
+      list.style.flexWrap = "wrap";
+      list.style.gap = "8px";
+      list.style.marginTop = "10px";
+
+      missingBuiltins.forEach(function (orig) {
+        const btn = el("button", "ed-btn", "+ вернуть " + (orig.label || orig.title || orig.id));
+        btn.type = "button";
+        btn.title = "вернуть окно «" + (orig.title || orig.id) + "» в док";
+        btn.addEventListener("click", function () {
+          const restored = clone(orig);
+          let editorIdx = -1;
+          for (let i = 0; i < draft.windows.length; i += 1) {
+            if (draft.windows[i].type === "editor") {
+              editorIdx = i;
+              break;
+            }
+          }
+          if (editorIdx >= 0) {
+            draft.windows.splice(editorIdx, 0, restored);
+          } else {
+            draft.windows.push(restored);
+          }
+          queueSave();
+          renderPanel();
+          setStatus("приложение «" + (orig.label || orig.id) + "» возвращено", "ok");
+        });
+        list.appendChild(btn);
       });
+
+      if (missingBuiltins.length > 1) {
+        const allBtn = el("button", "ed-btn ed-btn-main", "вернуть все");
+        allBtn.type = "button";
+        allBtn.title = "вернуть все удалённые встроенные окна";
+        allBtn.addEventListener("click", function () {
+          missingBuiltins.forEach(function (orig) {
+            const restored = clone(orig);
+            let editorIdx = -1;
+            for (let i = 0; i < draft.windows.length; i += 1) {
+              if (draft.windows[i].type === "editor") {
+                editorIdx = i;
+                break;
+              }
+            }
+            if (editorIdx >= 0) {
+              draft.windows.splice(editorIdx, 0, restored);
+            } else {
+              draft.windows.push(restored);
+            }
+          });
+          queueSave();
+          renderPanel();
+          setStatus("все встроенные приложения возвращены", "ok");
+        });
+        list.appendChild(allBtn);
+      }
+
+      restoreCard.appendChild(list);
+      wrap.appendChild(restoreCard);
     }
 
     return wrap;
@@ -1599,6 +2356,52 @@
     box.style.background = "transparent";
     box.style.border = "0";
     box.style.padding = "0";
+
+    const topBar = el("div", "ed-row");
+    topBar.style.marginBottom = "12px";
+    topBar.style.display = "flex";
+    topBar.style.alignItems = "center";
+    topBar.style.gap = "10px";
+
+    const openSettingsBtn = el("button", "ed-btn ed-btn-main", "открыть окно настроек");
+    openSettingsBtn.type = "button";
+    openSettingsBtn.title = "применит текущие параметры и откроет окно настроек на рабочем столе";
+    openSettingsBtn.addEventListener("click", function () {
+      const hasSettings = draft.windows.some(function (w) { return w.id === "settings"; });
+      if (!hasSettings) {
+        setStatus("окно «настройки» удалено из списка приложений — восстановите его во вкладке «приложения»", "err");
+        return;
+      }
+      commit();
+      saveDraft();
+      if (window.WindowManager && window.WindowManager.sync) WindowManager.sync();
+      if (window.WindowManager && window.WindowManager.open) {
+        window.WindowManager.open("settings");
+        if (window.WindowManager.focus) window.WindowManager.focus("settings");
+      }
+    });
+
+    const clearSettingsBtn = el("button", "ed-btn ed-btn-danger", "очистить сохранённые настройки");
+    clearSettingsBtn.type = "button";
+    clearSettingsBtn.title = "удалить сохранённые стили, тему и цвет из localStorage браузера";
+    clearSettingsBtn.addEventListener("click", function () {
+      [
+        "desktop-settings-v1",
+        "desktop-accent-v1",
+        "desktop-theme-accent-v1",
+        "desktop-wallpaper-v1",
+        "desktop-window-positions-v1",
+        "desktop-window-state-v1",
+        "desktop-clock-pos-v1"
+      ].forEach(function (k) {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+      window.location.reload();
+    });
+
+    topBar.appendChild(openSettingsBtn);
+    topBar.appendChild(clearSettingsBtn);
+    box.appendChild(topBar);
 
     box.appendChild(el("div", "ed-hint", "значения станут начальными для готового сайта. заблокированное нельзя будет выбрать, скрытое исчезнет из окна настроек. новые пункты — док, сторона дока, подсказки hypr и их размер — правятся здесь же."));
 
@@ -1854,7 +2657,14 @@
       "- data.js — весь текст, заметки, вкладки, команды и список окон;",
       "- shell.js / shell.css — окна, док, тема;",
       "- apps.js / apps.css — содержимое окон;",
-      "- index.html — точка входа.",
+      "- index.html — точка входа;",
+      "- .github/workflows/deploy.yml — автоматический деплой на GitHub Pages.",
+      "",
+      "## Публикация на GitHub Pages",
+      "",
+      "1. Создай репозиторий на GitHub и загрузи эти файлы.",
+      "2. В настройках репозитория (Settings -> Pages -> Build and deployment) выбери «GitHub Actions».",
+      "3. При каждом коммите сайт автоматически публикуется.",
       "",
       "Правь data.js вручную или снова открой проект в конструкторе",
       "(project.json лежит рядом).",
@@ -1869,6 +2679,46 @@
       savedAt: new Date().toISOString(),
       data: exportData()
     }, null, 2);
+  }
+
+  function buildDeployWorkflow() {
+    return [
+      "name: Deploy site to GitHub Pages",
+      "",
+      "on:",
+      "  push:",
+      "    branches: [main, master]",
+      "  workflow_dispatch:",
+      "",
+      "permissions:",
+      "  contents: read",
+      "  pages: write",
+      "  id-token: write",
+      "",
+      "concurrency:",
+      "  group: 'pages'",
+      "  cancel-in-progress: false",
+      "",
+      "jobs:",
+      "  deploy:",
+      "    environment:",
+      "      name: github-pages",
+      "      url: ${{ steps.deployment.outputs.page_url }}",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - name: Checkout",
+      "        uses: actions/checkout@v4",
+      "      - name: Setup Pages",
+      "        uses: actions/configure-pages@v4",
+      "      - name: Upload artifact",
+      "        uses: actions/upload-pages-artifact@v3",
+      "        with:",
+      "          path: '.'",
+      "      - name: Deploy to GitHub Pages",
+      "        id: deployment",
+      "        uses: actions/deploy-pages@v4",
+      ""
+    ].join("\n");
   }
 
   async function writeFile(dir, name, text) {
@@ -2014,6 +2864,7 @@
 
     files.push(["README.md", buildReadme()]);
     files.push(["project.json", buildProjectFile()]);
+    files.push([".github/workflows/deploy.yml", buildDeployWorkflow()]);
 
     const asset = await previewAsset();
     if (asset) files.push(asset);
@@ -2049,8 +2900,13 @@
         exists = false;
       }
 
-      if (exists && !window.confirm("в папке уже есть index.html. заменить файлы сайта?")) {
-        return;
+      if (exists) {
+        const sure = await edConfirm("в папке уже есть index.html. заменить файлы сайта?", {
+          title: "сохранение сайта",
+          ok: "заменить",
+          danger: false
+        });
+        if (!sure) return;
       }
 
       const sources = ["shell.css", "apps.css", "shell.js", "apps.js"];
@@ -2071,6 +2927,14 @@
 
       await writeFile(folderHandle, "README.md", buildReadme());
       await writeFile(folderHandle, "project.json", buildProjectFile());
+
+      try {
+        const ghDir = await folderHandle.getDirectoryHandle(".github", { create: true });
+        const wfDir = await ghDir.getDirectoryHandle("workflows", { create: true });
+        await writeFile(wfDir, "deploy.yml", buildDeployWorkflow());
+      } catch (err) {
+        /* создание папки workflows не блокирует сохранение */
+      }
 
       try {
         await folderHandle.getDirectoryHandle("assets", { create: true });
@@ -2147,23 +3011,60 @@
     apply.type = "button";
     apply.addEventListener("click", applyDraft);
 
-    const save = el("button", "ed-btn ed-btn-save", "сохранить готовый сайт");
-    save.type = "button";
-    save.title = "соберёт index.html, data.js и остальные файлы в выбранной папке";
-    save.addEventListener("click", saveToFolder);
+    const saveMenu = el("details", "ed-save-menu");
+    const saveToggle = el("summary", "ed-btn ed-btn-save", "сохранить сайт");
+    saveToggle.title = window.showDirectoryPicker
+      ? "выбери способ: записать файлы прямо в папку или скачать zip-архив"
+      : "браузер не умеет писать в папку — останется скачать zip-архив";
+    saveMenu.appendChild(saveToggle);
+
+    const saveList = el("div", "ed-save-list");
+
+    const folderItem = el("button", "ed-save-item", "в папку на диске");
+    folderItem.type = "button";
+    if (window.showDirectoryPicker) {
+      folderItem.title = "выбрать папку и записать index.html, data.js и остальные файлы";
+    } else {
+      folderItem.disabled = true;
+      folderItem.textContent = "в папку на диске";
+      folderItem.title = "этот браузер не поддерживает запись в папку";
+    }
+    folderItem.addEventListener("click", function () {
+      saveMenu.removeAttribute("open");
+      saveToFolder();
+    });
+
+    const zipItem = el("button", "ed-save-item", "скачать zip-архив");
+    zipItem.type = "button";
+    zipItem.title = "работает везде: распакуй site.zip и открой index.html";
+    zipItem.addEventListener("click", function () {
+      saveMenu.removeAttribute("open");
+      downloadFiles();
+    });
+
+    saveList.appendChild(folderItem);
+    saveList.appendChild(zipItem);
+    saveMenu.appendChild(saveList);
+
+    document.addEventListener("click", function (ev) {
+      if (!saveMenu.contains(ev.target)) saveMenu.removeAttribute("open");
+    });
 
     const open = el("button", "ed-btn", "открыть проект");
     open.type = "button";
     open.addEventListener("click", openProject);
 
-    const downloadBtn = el("button", "ed-btn", "скачать zip");
-    downloadBtn.type = "button";
-    downloadBtn.addEventListener("click", downloadFiles);
+    const reloadBtn = el("button", "ed-btn", "перезагрузить сайт");
+    reloadBtn.type = "button";
+    reloadBtn.title = "перезагрузить страницу сайта в браузере";
+    reloadBtn.addEventListener("click", function () {
+      window.location.reload();
+    });
 
     actions.appendChild(apply);
-    actions.appendChild(save);
+    actions.appendChild(saveMenu);
     actions.appendChild(open);
-    actions.appendChild(downloadBtn);
+    actions.appendChild(reloadBtn);
     top.appendChild(actions);
 
     const status = el("div", "ed-status");

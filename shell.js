@@ -295,43 +295,35 @@
 
   function themeColor(value) {
     const theme = DATA.theme || {};
+    const val = value || (theme && theme.accent);
+
     const preset = (theme.presets || []).filter(function (item) {
-      return item.id === value;
+      return item.id === val;
     })[0];
 
-    if (!value) {
-      let savedColor = "";
-      try {
-        savedColor = localStorage.getItem(themeKey) || "";
-      } catch (err) {
-        savedColor = "";
-      }
-
-      if (/^#[0-9a-f]{6}$/i.test(savedColor)) {
-        themeState.accent = "";
-        themeState.color = savedColor;
-        return savedColor;
-      }
-
-      themeState.accent = theme.accent || (theme.presets && theme.presets[0] && theme.presets[0].id) || "sand";
-      return themeColor(themeState.accent);
-    }
-
     if (preset) {
+      themeState.accent = preset.id;
       themeState.color = preset.color;
       return preset.color;
     }
 
-    if (/^#[0-9a-f]{6}$/i.test(String(value || ""))) {
-      themeState.color = value;
-      return value;
+    if (/^#[0-9a-f]{6}$/i.test(String(val || ""))) {
+      themeState.accent = "";
+      themeState.color = val;
+      return val;
     }
 
-    const saved = localStorage.getItem(themeKey);
-    if (saved && /^#[0-9a-f]{6}$/i.test(saved)) {
-      themeState.accent = saved;
-      themeState.color = saved;
-      return saved;
+    let savedColor = "";
+    try {
+      savedColor = localStorage.getItem(themeKey) || "";
+    } catch (err) {
+      savedColor = "";
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(savedColor)) {
+      themeState.accent = "";
+      themeState.color = savedColor;
+      return savedColor;
     }
 
     const first = (theme.presets || [])[0];
@@ -963,6 +955,21 @@
   }
 
   function sync() {
+    (DATA.settings || []).forEach(function (s) {
+      if (s.id && s.value !== undefined) {
+        settingsState[s.id] = s.value;
+      }
+    });
+    if (DATA.theme && DATA.theme.accent) {
+      themeColor(DATA.theme.accent);
+      try {
+        localStorage.setItem(themeKey, themeState.color);
+      } catch (e) {}
+    }
+    applySettings();
+    applyTheme();
+    saveSettings();
+
     const wanted = {};
 
     DATA.windows.forEach(function (cfg) {
@@ -1109,6 +1116,7 @@
   }
 
   function focusWindow(id) {
+    if (lastFocused === id) return;
     const win = windows.get(id);
     if (!win) return;
 
@@ -1416,6 +1424,8 @@
     center: centerAndMark,
     focus: focusWindow,
     sync: sync,
+    applySetting: applySetting,
+    applyTheme: applyTheme,
     remove: removeWindow,
     refresh: function (id) {
       const cfg = configs.get(id);
@@ -1551,7 +1561,7 @@
 
     ensureLiquidGlassFilter();
     settingsState = loadSettings();
-    themeColor();
+    themeColor(DATA.theme && DATA.theme.accent);
     applySettings();
     applyTheme();
     buildClock();

@@ -8,6 +8,19 @@
   height: 100%;
   min-height: 0;
   background: var(--surface-paper, #fffdf8);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.ed-panel,
+.ed-card,
+.ed-field,
+.ed-textarea,
+.ed-input,
+.ed-code,
+.ed-preview-box {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ---------- Верхняя полоса ---------- */
@@ -59,6 +72,12 @@
   outline-offset: 1px;
 }
 
+.ed-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .ed-btn-main {
   background: var(--accent);
   border-color: var(--accent-dark);
@@ -89,6 +108,71 @@
 .ed-btn-save:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
+}
+
+/* Меню сохранения: одна кнопка, два понятных способа */
+.ed-save-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.ed-save-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.ed-save-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ed-save-menu > summary::after {
+  content: "▾";
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+.ed-save-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  padding: 4px;
+  background: var(--surface-paper);
+  border: 1px solid var(--border-dark);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.25);
+}
+
+.ed-save-item {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-save-item:hover {
+  background: var(--dock-hover-bg);
+}
+
+.ed-save-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.ed-save-item:disabled {
+  color: var(--text-dim);
+  cursor: not-allowed;
 }
 
 .ed-btn-danger {
@@ -257,6 +341,61 @@
   tab-size: 2;
 }
 
+.ed-fmt-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.ed-fmt-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--border-dark);
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ed-fmt-btn:hover {
+  background: var(--dock-hover-bg);
+  border-color: var(--accent);
+}
+
+.ed-fmt-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent-dark);
+}
+
+.ed-preview-box {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-inset);
+  min-height: 80px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.ed-preview-box blockquote {
+  margin: 8px 0 12px;
+  padding: 8px 14px 8px 12px;
+  background: var(--surface-soft);
+  border-right: 3px solid var(--accent);
+  border-radius: 6px 0 0 6px;
+  color: var(--text);
+  font-style: italic;
+}
+
 .ed-hint {
   font-size: 10.5px;
   color: var(--text-dim);
@@ -350,6 +489,16 @@
 }
 
 /* ---------- Список приложений ---------- */
+
+.ed-apps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ed-app-card {
+  gap: 8px;
+}
 
 .ed-app-row {
   display: flex;
@@ -777,4 +926,57 @@ body.theme-dark[data-style="glass"] .ed-card {
   background: rgba(var(--accent-rgb), 0.08);
   border-color: rgba(var(--accent-rgb), 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ---------- Своё окно подтверждения ---------- */
+
+.ed-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.ed-dialog.is-on {
+  opacity: 1;
+}
+
+.ed-dialog-card {
+  width: min(380px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-paper);
+  box-shadow: 0 18px 40px rgba(var(--accent-rgb), 0.28);
+}
+
+.ed-dialog-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sand-dark);
+}
+
+.ed-dialog-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.ed-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+body.no-motion .ed-dialog {
+  transition: none;
 }
