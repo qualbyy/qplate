@@ -51,6 +51,18 @@
       const saved = JSON.parse(localStorage.getItem(settingsKey) || "null");
       if (saved && typeof saved === "object") {
         Object.keys(result).forEach(function (key) {
+          const item = (DATA.settings || []).filter(function (setting) {
+            return setting.id === key;
+          })[0];
+
+          if (item && item.type === "number") {
+            if (saved[key] !== undefined && saved[key] !== "") {
+              const value = Number(saved[key]);
+              if (Number.isFinite(value)) result[key] = clampNumber(item, value);
+            }
+            return;
+          }
+
           if (saved[key] !== undefined && typeof saved[key] === typeof result[key]) {
             result[key] = saved[key];
           }
@@ -61,6 +73,43 @@
     }
 
     return result;
+  }
+
+  function clampNumber(item, value) {
+    const number = Number(value);
+    const fallback = Number(item.value);
+    const base = Number.isFinite(number) ? number : (Number.isFinite(fallback) ? fallback : 0);
+    const min = Number.isFinite(Number(item.min)) ? Number(item.min) : -Infinity;
+    const max = Number.isFinite(Number(item.max)) ? Number(item.max) : Infinity;
+    return Math.min(max, Math.max(min, Math.round(base)));
+  }
+
+  /* ---------- Главное окно сайта ---------- */
+
+  function pinnedConfig() {
+    return (DATA.windows || []).filter(function (cfg) {
+      return cfg.pinned === true;
+    })[0] || null;
+  }
+
+  function hasEditorWindow() {
+    return (DATA.windows || []).some(function (cfg) {
+      return cfg.type === "editor";
+    });
+  }
+
+  function isKiosk() {
+    return !!pinnedConfig() && !hasEditorWindow();
+  }
+
+  function dockClearance() {
+    if (isKiosk()) return 0;
+    if (isMobile()) return 92;
+    if ((settingsState.dockmode || "float") === "iphone") {
+      const dockEl = document.getElementById("dock");
+      return (dockEl ? dockEl.offsetHeight : 64) + 24;
+    }
+    return 10;
   }
 
   function saveSettings() {
@@ -455,7 +504,7 @@
     if (!saved || !win) return false;
 
     const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
 
     win.style.left = Math.min(Math.max(10, saved.left || 10), maxLeft) + "px";
     win.style.top = Math.min(Math.max(10, saved.top || 10), maxTop) + "px";
@@ -475,6 +524,11 @@
     document.body.classList.toggle("no-tooltips", settingsState.tooltips === false);
     document.body.classList.toggle("big-text", settingsState.bigtext === true);
     document.body.classList.toggle("no-clock", settingsState.clock === false);
+    document.body.classList.toggle("is-kiosk", isKiosk());
+
+    document.body.dataset.style = settingsState.style || "desktop";
+    document.body.dataset.dockmode = settingsState.dockmode || "float";
+    document.documentElement.style.setProperty("--dock-size", clampNumber({ min: 28, max: 64, value: 44 }, settingsState.docksize) + "px");
 
     ["tl", "tc", "tr", "bl", "bc", "br", "center", "custom"].forEach(function (pos) {
       document.body.classList.toggle("clock-pos-" + pos, (settingsState.clockpos || "tr") === pos);
@@ -506,14 +560,19 @@
 
     if (item && Array.isArray(item.locked) && item.locked.indexOf(String(value)) >= 0) return;
 
-    const isToggle = !item || item.type === "toggle" || item.type === undefined;
-    settingsState[id] = isToggle ? !!value : String(value);
+    if (item && item.type === "number") {
+      settingsState[id] = clampNumber(item, value);
+    } else {
+      const isToggle = !item || item.type === "toggle" || item.type === undefined;
+      settingsState[id] = isToggle ? !!value : String(value);
+    }
 
     applySettings();
     saveSettings();
 
     if (id === "theme") applyTheme();
     if (id === "positions" && settingsState.positions === false) clearPositions();
+    if ((id === "dockmode" || id === "docksize") && windows.size) clampOpenWindows();
   }
 
   /* ---------- Сборка окна ---------- */
@@ -562,6 +621,7 @@
     win.className = "window";
     win.id = "win-" + cfg.id;
     win.dataset.app = cfg.id;
+    if (isKiosk() && cfg.pinned === true) win.classList.add("is-kiosk");
     win.setAttribute("role", "dialog");
     win.setAttribute("aria-label", cfg.title);
     win.style.width = (cfg.width || 620) + "px";
@@ -729,6 +789,9 @@
       }
       createDockButton(cfg);
     });
+
+    document.body.classList.toggle("is-kiosk", isKiosk());
+    buildHotkeyHints();
   }
 
   function updateDock(id, open) {
@@ -790,10 +853,12 @@
   }
 
   function minimizeWindow(id) {
+    if (isKiosk() && pinnedConfig().id === id) return;
     hideInstant(id);
   }
 
   function closeWindow(id) {
+    if (isKiosk() && pinnedConfig().id === id) return;
     if (!state[id]) return;
 
     const win = windows.get(id);
@@ -820,6 +885,11 @@
   }
 
   function toggleWindow(id) {
+    if (isKiosk() && pinnedConfig().id === id) {
+      openWindow(id);
+      return;
+    }
+
     if (state[id]) {
       minimizeWindow(id);
     } else {
@@ -866,7 +936,7 @@
     if (isMobile()) return;
 
     const win = windows.get(id);
-    if (!win || win.classList.contains("is-maximized")) return;
+    if (!win || win.classList.contains("is-maximized") || win.classList.contains("is-kiosk")) return;
 
     e.preventDefault();
     focusWindow(id);
@@ -900,6 +970,9 @@
         top = startTop + (startHeight - height);
       }
 
+      const bottomLimit = window.innerHeight - dockClearance();
+      if (top + height > bottomLimit) height = Math.max(MIN_HEIGHT, bottomLimit - top);
+
       win.style.left = Math.round(left) + "px";
       win.style.top = Math.round(top) + "px";
       win.style.width = Math.round(width) + "px";
@@ -919,7 +992,7 @@
 
   function toggleMaximize(id) {
     const win = windows.get(id);
-    if (!win || isMobile()) return;
+    if (!win || isMobile() || win.classList.contains("is-kiosk")) return;
 
     if (win.classList.contains("is-maximized")) {
       win.classList.remove("is-maximized");
@@ -988,7 +1061,7 @@
     }
 
     const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+    const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
 
     win.style.left = Math.min(left, maxLeft) + "px";
     win.style.top = Math.min(top, maxTop) + "px";
@@ -1001,7 +1074,7 @@
       const left = parseInt(win.style.left, 10) || 10;
       const top = parseInt(win.style.top, 10) || 10;
       const maxLeft = Math.max(10, window.innerWidth - win.offsetWidth - 10);
-      const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - 10);
+      const maxTop = Math.max(10, window.innerHeight - win.offsetHeight - dockClearance());
 
       if (left > maxLeft) win.style.left = maxLeft + "px";
       if (top > maxTop) win.style.top = maxTop + "px";
@@ -1020,6 +1093,8 @@
     if (!win) return;
 
     focusWindow(id);
+
+    if (win.classList.contains("is-kiosk")) return;
 
     dragState = {
       win: win,
@@ -1044,7 +1119,7 @@
     const dy = e.clientY - dragState.y;
 
     const maxLeft = Math.max(8, window.innerWidth - win.offsetWidth - 8);
-    const maxTop = Math.max(8, window.innerHeight - win.offsetHeight - 8);
+    const maxTop = Math.max(8, window.innerHeight - win.offsetHeight - dockClearance());
 
     const left = Math.max(8, Math.min(maxLeft, dragState.left + dx));
     const top = Math.max(8, Math.min(maxTop, dragState.top + dy));
@@ -1125,6 +1200,64 @@
     }
   };
 
+  /* ---------- Подсказки хоткеев (стиль hyprland) ---------- */
+
+  let hintsEl = null;
+
+  function buildHotkeyHints() {
+    if (hintsEl) {
+      hintsEl.remove();
+      hintsEl = null;
+    }
+    if (isKiosk()) return;
+
+    const list = (DATA.windows || []).slice(0, 9);
+    if (!list.length) return;
+
+    const bar = document.createElement("div");
+    bar.className = "hotkey-hints";
+    bar.id = "hotkey-hints";
+
+    list.forEach(function (cfg, index) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hotkey-hint";
+      btn.title = "открыть: " + (cfg.label || cfg.id);
+
+      const key = document.createElement("kbd");
+      key.textContent = "alt+" + (index + 1);
+      btn.appendChild(key);
+      btn.appendChild(document.createTextNode(" " + (cfg.label || cfg.id)));
+
+      btn.addEventListener("click", function () {
+        toggleWindow(cfg.id);
+      });
+
+      bar.appendChild(btn);
+    });
+
+    document.body.appendChild(bar);
+    hintsEl = bar;
+  }
+
+  function onHotkey(e) {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (isKiosk() || isMobile()) return;
+    if ((settingsState.style || "desktop") !== "hypr") return;
+
+    const target = e.target;
+    if (target && target.closest && target.closest("input, textarea, select, [contenteditable='true']")) return;
+
+    const number = parseInt(e.key, 10);
+    if (!(number >= 1 && number <= 9)) return;
+
+    const cfg = (DATA.windows || [])[number - 1];
+    if (!cfg) return;
+
+    e.preventDefault();
+    toggleWindow(cfg.id);
+  }
+
   /* ---------- Запуск ---------- */
 
   function init() {
@@ -1144,20 +1277,31 @@
       });
     }
 
-    DATA.windows.forEach(function (cfg) {
-      configs.set(cfg.id, cfg);
-      buildWindow(cfg);
-    });
+    if (isKiosk()) {
+      const pinned = pinnedConfig();
+      if (pinned) {
+        configs.set(pinned.id, pinned);
+        buildWindow(pinned);
+        openWindow(pinned.id);
+      }
+    } else {
+      DATA.windows.forEach(function (cfg) {
+        configs.set(cfg.id, cfg);
+        buildWindow(cfg);
+      });
 
-    buildDock();
+      buildDock();
 
-    const savedOpen = loadOpenState();
+      const savedOpen = loadOpenState();
 
-    DATA.windows.forEach(function (cfg) {
-      const shouldOpen = savedOpen ? savedOpen.indexOf(cfg.id) >= 0 : cfg.open;
-      if (shouldOpen) openWindow(cfg.id);
-    });
+      DATA.windows.forEach(function (cfg) {
+        const shouldOpen = savedOpen ? savedOpen.indexOf(cfg.id) >= 0 : cfg.open;
+        if (shouldOpen) openWindow(cfg.id);
+      });
+    }
 
+    buildHotkeyHints();
+    document.addEventListener("keydown", onHotkey);
     window.addEventListener("resize", onResize);
   }
 
