@@ -1340,6 +1340,7 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .setting-label {
@@ -1741,4 +1742,422 @@
   border-color: var(--sand-dark);
   color: var(--text);
   outline: none;
+}
+
+/* ------------------------------------------------------------
+   Жидкое стекло (liquid glass) — элементы приложений
+   ------------------------------------------------------------ */
+
+/* Документ / PDF */
+body[data-style="glass"] .pdf-sheet {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(var(--accent-rgb), 0.18) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 14px 36px rgba(var(--accent-rgb), 0.2);
+}
+
+body.theme-dark[data-style="glass"] .pdf-sheet {
+  background: linear-gradient(135deg, rgba(20, 20, 26, 0.65) 0%, rgba(var(--accent-rgb), 0.2) 100%);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+body[data-style="glass"] .pdf-toolbar {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-top: 1px solid rgba(var(--accent-rgb), 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body.theme-dark[data-style="glass"] .pdf-toolbar {
+  background: rgba(20, 20, 26, 0.5);
+  border-top-color: rgba(var(--accent-rgb), 0.22);
+}
+
+body[data-style="glass"] .pdf-download {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  color: var(--text);
+}
+
+body[data-style="glass"] .pdf-download:hover {
+  background: rgba(var(--accent-rgb), 0.35);
+  border-color: var(--sand-accent);
+}
+
+/* Браузер и карточки */
+body[data-style="glass"] .browser-chrome {
+  background: rgba(var(--accent-rgb), 0.16);
+  border-bottom-color: rgba(var(--accent-rgb), 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+body[data-style="glass"] .browser-toolbar {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-bottom-color: rgba(var(--accent-rgb), 0.25);
+}
+
+body[data-style="glass"] .browser-tab {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.32);
+  color: var(--text);
+}
+
+body[data-style="glass"] .browser-tab:hover {
+  background: rgba(var(--accent-rgb), 0.3);
+}
+
+body[data-style="glass"] .browser-tab.active {
+  background: rgba(var(--accent-rgb), 0.42);
+  border-color: var(--sand-accent);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+body[data-style="glass"] .browser-url,
+body[data-style="glass"] .url-bar {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.38);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+body[data-style="glass"] .url-lock {
+  color: var(--sand-accent);
+}
+
+body[data-style="glass"] .icon-btn {
+  color: var(--text);
+}
+
+body[data-style="glass"] .icon-btn:hover:not(:disabled),
+body[data-style="glass"] .icon-btn:focus-visible {
+  background: rgba(var(--accent-rgb), 0.25);
+  color: var(--text);
+}
+
+body[data-style="glass"] .demo-card {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+body.theme-dark[data-style="glass"] .browser-chrome {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-bottom-color: rgba(var(--accent-rgb), 0.3);
+}
+
+body.theme-dark[data-style="glass"] .browser-toolbar {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-bottom-color: rgba(var(--accent-rgb), 0.25);
+}
+
+body.theme-dark[data-style="glass"] .browser-tab {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.25);
+}
+
+body.theme-dark[data-style="glass"] .browser-tab.active {
+  background: rgba(var(--accent-rgb), 0.35);
+  border-color: var(--sand-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+body.theme-dark[data-style="glass"] .browser-url,
+body.theme-dark[data-style="glass"] .url-bar {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  color: #f0f0f5;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body.theme-dark[data-style="glass"] .pdf-toolbar {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-top-color: rgba(var(--accent-rgb), 0.3);
+}
+
+body.theme-dark[data-style="glass"] .files-toolbar {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-bottom-color: rgba(var(--accent-rgb), 0.3);
+}
+
+body.theme-dark[data-style="glass"] .file-preview {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-top-color: rgba(var(--accent-rgb), 0.28);
+}
+
+body.theme-dark[data-style="glass"] .demo-card {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Файлы */
+body[data-style="glass"] .files-toolbar {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-bottom-color: rgba(var(--accent-rgb), 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-dark[data-style="glass"] .files-toolbar {
+  background: rgba(20, 20, 26, 0.45);
+  border-bottom-color: rgba(var(--accent-rgb), 0.2);
+}
+
+body[data-style="glass"] .breadcrumb {
+  color: var(--text);
+  border-radius: 4px;
+}
+
+body[data-style="glass"] .breadcrumb:hover {
+  background: rgba(var(--accent-rgb), 0.22);
+}
+
+body[data-style="glass"] .file-glyph {
+  color: var(--sand-accent);
+}
+
+body[data-style="glass"] .breadcrumb-sep {
+  color: var(--sand-accent);
+  opacity: 0.8;
+}
+
+body[data-style="glass"] .file-meta {
+  color: var(--text-dim);
+  opacity: 0.85;
+}
+
+body[data-style="glass"] .file-row {
+  border-radius: 6px;
+}
+
+body[data-style="glass"] .file-row:hover,
+body[data-style="glass"] .file-row:focus-visible {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-color: rgba(var(--accent-rgb), 0.38);
+}
+
+body[data-style="glass"] .file-preview {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-top-color: rgba(var(--accent-rgb), 0.25);
+}
+
+body.theme-dark[data-style="glass"] .file-preview {
+  background: rgba(20, 20, 26, 0.45);
+  border-top-color: rgba(var(--accent-rgb), 0.2);
+}
+
+body[data-style="glass"] .preview-action {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.35);
+}
+
+body[data-style="glass"] .preview-action:hover {
+  background: rgba(var(--accent-rgb), 0.32);
+  border-color: var(--sand-accent);
+}
+
+/* Настройки */
+body[data-style="glass"] .settings-tabs {
+  border-bottom-color: rgba(var(--accent-rgb), 0.25);
+}
+
+body[data-style="glass"] .settings-tab {
+  border-radius: 8px 8px 0 0;
+}
+
+body[data-style="glass"] .settings-tab:hover {
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--text);
+}
+
+body[data-style="glass"] .settings-tab.is-active {
+  background: rgba(var(--accent-rgb), 0.32);
+  border-color: rgba(var(--accent-rgb), 0.38);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+body.theme-dark[data-style="glass"] .settings-tab.is-active {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-color: rgba(var(--accent-rgb), 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body[data-style="glass"] .setting-toggle {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.35);
+}
+
+body[data-style="glass"] .setting-toggle[aria-checked="true"] {
+  background: var(--sand-accent);
+  border-color: var(--sand-accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+body[data-style="glass"] .setting-row {
+  border-bottom-color: rgba(var(--accent-rgb), 0.2);
+}
+
+body[data-style="glass"] .theme-block {
+  border-bottom-color: rgba(var(--accent-rgb), 0.2);
+}
+
+body[data-style="glass"] .setting-select,
+body[data-style="glass"] .setting-input,
+body[data-style="glass"] .cmd-input,
+body[data-style="glass"] .interactive-line {
+  background-color: rgba(var(--accent-rgb), 0.16);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  color: var(--text);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+body.theme-dark[data-style="glass"] .setting-select,
+body.theme-dark[data-style="glass"] .setting-input,
+body.theme-dark[data-style="glass"] .cmd-input,
+body.theme-dark[data-style="glass"] .interactive-line {
+  background-color: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  color: #f0f0f5;
+}
+
+body[data-style="glass"] .setting-select:focus,
+body[data-style="glass"] .setting-input:focus {
+  border-color: var(--sand-accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.45);
+}
+
+body[data-style="glass"] .settings-reset {
+  background: rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  color: var(--text);
+}
+
+body[data-style="glass"] .settings-reset:hover,
+body[data-style="glass"] .settings-reset:focus-visible {
+  background: rgba(var(--accent-rgb), 0.3);
+  border-color: var(--sand-accent);
+}
+
+body.theme-dark[data-style="glass"] .settings-reset {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.25);
+  color: #ddd;
+}
+
+body.theme-dark[data-style="glass"] .settings-reset:hover,
+body.theme-dark[data-style="glass"] .settings-reset:focus-visible {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-color: var(--sand-accent);
+  color: #fff;
+}
+
+/* Заметки, Фото, Музыка, Терминал */
+body[data-style="glass"] .note-card,
+body[data-style="glass"] .photo-card,
+body[data-style="glass"] .music-card,
+body[data-style="glass"] .player-panel,
+body[data-style="glass"] .track-row {
+  background: rgba(var(--accent-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+}
+
+body.theme-dark[data-style="glass"] .note-card,
+body.theme-dark[data-style="glass"] .photo-card,
+body.theme-dark[data-style="glass"] .music-card,
+body.theme-dark[data-style="glass"] .player-panel,
+body.theme-dark[data-style="glass"] .track-row {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.2);
+}
+
+body[data-style="glass"] .track-row:hover,
+body[data-style="glass"] .track-row.is-active {
+  background: rgba(var(--accent-rgb), 0.26);
+  border-color: var(--sand-accent);
+}
+
+body[data-style="glass"] .fetch-container {
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  border-radius: 8px;
+}
+
+/* Стеклянный терминал */
+body[data-style="glass"] .interactive-line {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+body[data-style="glass"] .nav-icon-btn,
+body[data-style="glass"] .nav-btn,
+body[data-style="glass"] .term-tag {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+body[data-style="glass"] .nav-icon-btn:hover,
+body[data-style="glass"] .nav-btn:hover {
+  background: rgba(var(--accent-rgb), 0.28);
+  border-color: var(--sand-accent);
+}
+
+body.theme-dark[data-style="glass"] .interactive-line {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Стеклянный аудиоплеер */
+body[data-style="glass"] .music-btn {
+  background: rgba(var(--accent-rgb), 0.15);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+body[data-style="glass"] .music-btn:hover,
+body[data-style="glass"] .music-btn:focus-visible {
+  background: rgba(var(--accent-rgb), 0.35);
+  border-color: var(--sand-accent);
+}
+
+body[data-style="glass"] .music-btn.play {
+  background: var(--sand-accent);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.45);
+}
+
+body[data-style="glass"] .music-cover {
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(var(--accent-rgb), 0.25);
+}
+
+body.theme-dark[data-style="glass"] .music-btn {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body.theme-dark[data-style="glass"] .music-btn:hover {
+  background: rgba(var(--accent-rgb), 0.25);
+  border-color: var(--sand-accent);
 }

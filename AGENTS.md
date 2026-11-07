@@ -66,8 +66,9 @@
 
 ### Оформление, док и главное окно
 
-- `style` — `desktop` | `win98` | `aero` | `hypr`. Меняет только CSS
-  через `body[data-style]`; ключевой цвет не трогает.
+- `style` — `desktop` | `win98` | `aero` | `hypr` | `glass`. Меняет только CSS
+  через `body[data-style]`; ключевой цвет не трогает. `glass` включает Liquid Glass
+  (iOS/macOS 26) с преломлением света через SVG-фильтр `feDisplacementMap`.
 - `dockmode` — `float` | `iphone`, `docksize` — 28–64.
   Выставляются как `body[data-dockmode]` и `--dock-size`.
 - `pinned` включает режим одного окна только когда в `DATA.windows`

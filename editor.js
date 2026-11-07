@@ -822,14 +822,23 @@
         reader.onload = function () {
           const value = String(reader.result || "");
           const node = { name: file.name, type: "file", kind: kind };
-          if (kind === "text") node.content = value;
-          else node.src = value;
 
-          if (!Array.isArray(parent.children)) parent.children = [];
-          parent.children.push(node);
-          queueSave();
-          renderPanel();
-          setStatus("файл «" + file.name + "» добавлен");
+          function commitNode(srcOrContent) {
+            if (kind === "text") node.content = srcOrContent;
+            else node.src = srcOrContent;
+
+            if (!Array.isArray(parent.children)) parent.children = [];
+            parent.children.push(node);
+            queueSave();
+            renderPanel();
+            setStatus("файл «" + file.name + "» добавлен");
+          }
+
+          if (kind === "image") {
+            shrinkImage(file, value, commitNode);
+          } else {
+            commitNode(value);
+          }
         };
 
         reader.onerror = function () {
@@ -1805,6 +1814,7 @@
       "<body>",
       '  <main class="desktop" id="desktop" aria-label="рабочий стол"></main>',
       '  <nav class="side-dock" id="dock" aria-label="приложения"></nav>',
+      '  <svg id="liquid-glass-svg" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;overflow:hidden;pointer-events:none;" aria-hidden="true"><defs><filter id="liquid-glass-filter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%"><feImage result="dispMap" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" href="data:image/svg+xml,%3Csvg%20xmlns%3D\'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg\'%20viewBox%3D\'0%200%20100%20100\'%20preserveAspectRatio%3D\'none\'%3E%3Cdefs%3E%3ClinearGradient%20id%3D\'gx\'%20x1%3D\'0%25\'%20y1%3D\'0%25\'%20x2%3D\'100%25\'%20y2%3D\'0%25\'%3E%3Cstop%20offset%3D\'0%25\'%20stop-color%3D\'%23000\'%2F%3E%3Cstop%20offset%3D\'100%25\'%20stop-color%3D\'%23f00\'%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D\'gy\'%20x1%3D\'0%25\'%20y1%3D\'0%25\'%20x2%3D\'0%25\'%20y2%3D\'100%25\'%3E%3Cstop%20offset%3D\'0%25\'%20stop-color%3D\'%23000\'%2F%3E%3Cstop%20offset%3D\'100%25\'%20stop-color%3D\'%230f0\'%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D\'b\'%3E%3CfeGaussianBlur%20stdDeviation%3D\'7\'%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'url(%23gx)\'%20style%3D\'mix-blend-mode%3Ascreen\'%2F%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'url(%23gy)\'%20style%3D\'mix-blend-mode%3Ascreen\'%2F%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'%23808080\'%20filter%3D\'url(%23b)\'%2F%3E%3C%2Fsvg%3E"/><feDisplacementMap in="SourceGraphic" in2="dispMap" scale="-28" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>',
       '  <script src="data.js"></script>',
       '  <script src="apps.js"></script>',
       '  <script src="shell.js"></script>',
@@ -2182,4 +2192,16 @@
   }
 
   registry.editor = { render: renderEditor };
+
+  /* Инициализируем и применяем сохраненный черновик при старте страницы,
+     чтобы импортированные страницы и настройки сохранялись при перезагрузке */
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) {
+      draft = loadDraft();
+      commit();
+    }
+  } catch (err) {
+    /* localStorage может быть недоступен */
+  }
 })();

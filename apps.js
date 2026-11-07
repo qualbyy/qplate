@@ -166,7 +166,19 @@
 
     if (useHtml && item.html) {
       const html = make("div", "content-html");
-      html.innerHTML = item.html;
+      const rawHtml = String(item.html);
+      /* Если импортированный html содержит теги <style>, изолируем его через shadowRoot,
+         чтобы чужие правила (напр. body, html) не ломали обои и оформление сайта */
+      if (/<style[\s>]/i.test(rawHtml) && html.attachShadow) {
+        try {
+          const shadow = html.attachShadow({ mode: "open" });
+          shadow.innerHTML = rawHtml;
+        } catch (e) {
+          html.innerHTML = rawHtml;
+        }
+      } else {
+        html.innerHTML = rawHtml;
+      }
       wrap.appendChild(html);
       return wrap;
     }
@@ -338,6 +350,7 @@
       });
 
       rows.push("  - all        : показать все разделы");
+      rows.push("  - echo <txt> : напечатать текст");
       rows.push("  - fastfetch  : карточка с информацией");
       rows.push("  - help       : этот список");
       rows.push("  - clear      : очистить вывод");
@@ -405,8 +418,18 @@
     }
 
     function run(raw) {
-      const command = String(raw || "").trim().toLowerCase();
-      if (!command) return;
+      const trimmed = String(raw || "").trim();
+      if (!trimmed) return;
+
+      const lower = trimmed.toLowerCase();
+
+      if (lower.startsWith("echo ") || lower === "echo") {
+        const text = trimmed.slice(4).trim();
+        appendText(trimmed, text);
+        return;
+      }
+
+      const command = lower;
 
       if (command === "clear") {
         output.innerHTML = "";

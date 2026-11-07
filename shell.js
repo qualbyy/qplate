@@ -39,6 +39,89 @@
   const isMobile = () => window.innerWidth <= 768;
   const motionOff = () => document.body.classList.contains("no-motion");
 
+  /* ---------- Звуки интерфейса (Web Audio API) ---------- */
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioCtx();
+    }
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playSound(type) {
+    if (!settingsState.sounds) return;
+    try {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      const style = settingsState.style || "desktop";
+
+      if (type === "open") {
+        if (style === "win98") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(880, now + 0.04);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (style === "glass" || style === "aero") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
+          gain.gain.setValueAtTime(0.09, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(540, now + 0.06);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.start(now);
+          osc.stop(now + 0.09);
+        }
+      } else if (type === "close") {
+        if (style === "win98") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.setValueAtTime(300, now + 0.04);
+          gain.gain.setValueAtTime(0.07, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(620, now);
+          osc.frequency.exponentialRampToValueAtTime(260, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        }
+      } else if (type === "click") {
+        osc.type = style === "win98" ? "square" : "sine";
+        osc.frequency.setValueAtTime(style === "win98" ? 800 : 700, now);
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        osc.start(now);
+        osc.stop(now + 0.035);
+      }
+    } catch (e) {
+      /* Web Audio может быть заблокирован политикой браузера до первого клика */
+    }
+  }
+
   /* ---------- Настройки ---------- */
 
   function loadSettings() {
@@ -511,7 +594,7 @@
   }
 
   function saveOpenState() {
-    if (!settingsState.positions || isMobile()) return;
+    if (!settingsState.positions) return;
 
     const ids = DATA.windows.filter(function (cfg) {
       return state[cfg.id];
@@ -527,7 +610,7 @@
   }
 
   function loadOpenState() {
-    if (!settingsState.positions || isMobile()) return null;
+    if (!settingsState.positions) return null;
 
     try {
       const saved = JSON.parse(localStorage.getItem(stateKey) || "null");
@@ -567,6 +650,7 @@
     document.body.classList.toggle("big-text", settingsState.bigtext === true);
     document.body.classList.toggle("no-clock", settingsState.clock === false);
     document.body.classList.toggle("no-hints", settingsState.hints === false);
+    document.body.classList.toggle("no-glare", settingsState.glare === false);
     document.body.classList.toggle("no-dock", settingsState.dock === false);
     document.body.classList.toggle("is-kiosk", isKiosk());
 
@@ -739,6 +823,15 @@
 
     win.addEventListener("pointerdown", function () {
       focusWindow(cfg.id);
+    });
+
+    win.addEventListener("pointermove", function (e) {
+      if (document.body.dataset.style !== "glass" || document.body.classList.contains("no-glare")) return;
+      const rect = win.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      win.style.setProperty("--glass-x", x + "px");
+      win.style.setProperty("--glass-y", y + "px");
     });
 
     desktop.appendChild(win);
@@ -919,6 +1012,14 @@
 
     state[id] = true;
     win.classList.remove("is-minimized", "is-closing");
+    if (isMobile() && !motionOff()) {
+      win.classList.remove("is-opening");
+      void win.offsetWidth;
+      win.classList.add("is-opening");
+      window.setTimeout(function () {
+        win.classList.remove("is-opening");
+      }, 350);
+    }
     win.removeAttribute("aria-hidden");
     updateDock(id, true);
 
@@ -930,6 +1031,7 @@
     saveOpenState();
     focusWindow(id);
     layoutHypr();
+    playSound("open");
 
     const lifecycle = lifecycles.get(id);
     if (lifecycle && typeof lifecycle.onOpen === "function") lifecycle.onOpen();
@@ -957,6 +1059,10 @@
 
   function minimizeWindow(id) {
     if (isKiosk() && pinnedConfig().id === id) return;
+    if (isMobile()) {
+      closeWindow(id);
+      return;
+    }
     hideInstant(id);
   }
 
@@ -968,6 +1074,7 @@
     state[id] = false;
     updateDock(id, false);
     saveOpenState();
+    playSound("close");
     win.classList.remove("is-minimized");
     win.classList.add("is-closing");
 
@@ -1102,6 +1209,13 @@
     if (hyprOn()) return;
     const win = windows.get(id);
     if (!win || isMobile() || win.classList.contains("is-kiosk")) return;
+
+    if (!motionOff()) {
+      win.classList.add("is-animating-max");
+      window.setTimeout(function () {
+        win.classList.remove("is-animating-max");
+      }, 320);
+    }
 
     if (win.classList.contains("is-maximized")) {
       win.classList.remove("is-maximized");
@@ -1408,6 +1522,26 @@
     else openWindow(cfg.id);
   }
 
+  /* ---------- SVG-фильтр Liquid Glass ---------- */
+
+  function ensureLiquidGlassFilter() {
+    if (document.getElementById("liquid-glass-filter")) return;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = [
+      '<svg id="liquid-glass-svg" xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;overflow:hidden;pointer-events:none;" aria-hidden="true">',
+      '  <defs>',
+      '    <filter id="liquid-glass-filter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">',
+      '      <feImage result="dispMap" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none"',
+      '        href="data:image/svg+xml,%3Csvg%20xmlns%3D\'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg\'%20viewBox%3D\'0%200%20100%20100\'%20preserveAspectRatio%3D\'none\'%3E%3Cdefs%3E%3ClinearGradient%20id%3D\'gx\'%20x1%3D\'0%25\'%20y1%3D\'0%25\'%20x2%3D\'100%25\'%20y2%3D\'0%25\'%3E%3Cstop%20offset%3D\'0%25\'%20stop-color%3D\'%23000\'%2F%3E%3Cstop%20offset%3D\'100%25\'%20stop-color%3D\'%23f00\'%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D\'gy\'%20x1%3D\'0%25\'%20y1%3D\'0%25\'%20x2%3D\'0%25\'%20y2%3D\'100%25\'%3E%3Cstop%20offset%3D\'0%25\'%20stop-color%3D\'%23000\'%2F%3E%3Cstop%20offset%3D\'100%25\'%20stop-color%3D\'%230f0\'%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D\'b\'%3E%3CfeGaussianBlur%20stdDeviation%3D\'7\'%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'url(%23gx)\'%20style%3D\'mix-blend-mode%3Ascreen\'%2F%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'url(%23gy)\'%20style%3D\'mix-blend-mode%3Ascreen\'%2F%3E%3Crect%20width%3D\'100\'%20height%3D\'100\'%20rx%3D\'8\'%20fill%3D\'%23808080\'%20filter%3D\'url(%23b)\'%2F%3E%3C%2Fsvg%3E"',
+      '      />',
+      '      <feDisplacementMap in="SourceGraphic" in2="dispMap" scale="-28" xChannelSelector="R" yChannelSelector="G"/>',
+      '    </filter>',
+      '  </defs>',
+      '</svg>'
+    ].join("");
+    if (wrap.firstElementChild) document.body.appendChild(wrap.firstElementChild);
+  }
+
   /* ---------- Запуск ---------- */
 
   function init() {
@@ -1415,6 +1549,7 @@
       document.title = DATA.meta.title;
     }
 
+    ensureLiquidGlassFilter();
     settingsState = loadSettings();
     themeColor();
     applySettings();
