@@ -114,6 +114,7 @@
       return ins;
     }
     const side = settingsState.dockplace || "right";
+    if (settingsState.dock === false) return ins;
     const dockEl = document.getElementById("dock");
     const attached = (settingsState.dockmode || "float") === "iphone";
     const gap = attached ? 20 : 12;
@@ -566,6 +567,7 @@
     document.body.classList.toggle("big-text", settingsState.bigtext === true);
     document.body.classList.toggle("no-clock", settingsState.clock === false);
     document.body.classList.toggle("no-hints", settingsState.hints === false);
+    document.body.classList.toggle("no-dock", settingsState.dock === false);
     document.body.classList.toggle("is-kiosk", isKiosk());
 
     document.body.dataset.style = settingsState.style || "desktop";

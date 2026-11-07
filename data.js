@@ -264,6 +264,7 @@ window.DATA = {
     { id: "style", type: "select", group: "вид", label: "стиль интерфейса", hint: "оболочка окон и дока; ключевой цвет не меняется", value: "desktop", options: [["desktop", "по умолчанию"], ["win98", "windows 98"], ["aero", "aero · windows 7"], ["hypr", "hyprland · минимализм"]] },
     { id: "hints", type: "toggle", group: "вид", label: "подсказки хоткеев", hint: "тонкая строка снизу, только в hyprland", value: true },
     { id: "hintsize", type: "number", group: "вид", label: "размер подсказок hypr, точек", hint: "ползунок виден только при стиле hyprland", value: 10, min: 8, max: 16, only: "hypr" },
+    { id: "dock", type: "toggle", group: "док", label: "док", hint: "показывать панель приложений на краю экрана", value: true },
     { id: "dockmode", type: "select", group: "док", label: "режим дока", hint: "плавающий или прикреплённый к краю экрана во всю длину", value: "float", options: [["float", "плавающий"], ["iphone", "прикрепленный"]] },
     { id: "dockplace", type: "select", group: "док", label: "сторона дока", hint: "к какому краю экрана прижат док", value: "right", options: [["right", "справа"], ["bottom", "снизу"], ["top", "сверху"], ["left", "слева"]] },
     { id: "docksize", type: "number", group: "док", label: "размер иконок дока", hint: "28–64 точек", value: 44, min: 28, max: 64 },
