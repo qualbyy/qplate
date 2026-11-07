@@ -322,24 +322,6 @@
     }
   }
 
-  function syncLocalStorageWithDraft() {
-    try {
-      const sState = {};
-      (draft.settings || []).forEach(function (item) {
-        sState[item.id] = item.value;
-      });
-      localStorage.setItem("desktop-settings-v1", JSON.stringify(sState));
-
-      if (draft.theme && draft.theme.accent) {
-        const col = draft.theme.accent;
-        const preset = (draft.theme.presets || []).find(function (p) { return p.id === col; });
-        localStorage.setItem("desktop-accent-v1", preset ? preset.color : col);
-      }
-    } catch (e) {
-      /* localStorage может быть недоступен */
-    }
-  }
-
   function commit() {
     DATA.meta = Object.assign({}, DATA.meta, draft.meta);
     DATA.notes = clone(draft.notes);
@@ -363,7 +345,6 @@
     DATA.music = clone(draft.music);
     DATA.settings = clone(draft.settings);
     DATA.theme = Object.assign({}, DATA.theme, draft.theme);
-    syncLocalStorageWithDraft();
   }
 
   function applyDraft() {

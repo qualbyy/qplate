@@ -34,6 +34,8 @@
   let lastFocused = null;
   let dragState = null;
   let settingsState = {};
+  let settingsDefaults = {};
+  let themeDefault = "";
   const themeState = { accent: "", color: "" };
 
   const isMobile = () => window.innerWidth <= 768;
@@ -955,17 +957,39 @@
   }
 
   function sync() {
+    const nextDefaults = {};
+
     (DATA.settings || []).forEach(function (s) {
-      if (s.id && s.value !== undefined) {
+      if (!s || !s.id || s.value === undefined) return;
+      nextDefaults[s.id] = s.value;
+
+      if (settingsState[s.id] === undefined) {
+        settingsState[s.id] = s.value;
+        return;
+      }
+
+      /* Значение по умолчанию изменили в конструкторе. Если пользователь
+         его не трогал — берём новое; если выбрал своё — не затираем. */
+      if (settingsDefaults[s.id] !== undefined && s.value !== settingsDefaults[s.id] && settingsState[s.id] === settingsDefaults[s.id]) {
         settingsState[s.id] = s.value;
       }
     });
+
+    settingsDefaults = nextDefaults;
+
     if (DATA.theme && DATA.theme.accent) {
-      themeColor(DATA.theme.accent);
+      const nextDefault = DATA.theme.accent;
+      const current = themeState.accent || themeState.color;
+      const untouched = !themeState.color
+        || current === themeDefault
+        || (!themeState.accent && String(themeState.color).toLowerCase() === String(themeDefault).toLowerCase());
+      if (untouched) themeColor(nextDefault);
       try {
         localStorage.setItem(themeKey, themeState.color);
       } catch (e) {}
+      themeDefault = nextDefault;
     }
+
     applySettings();
     applyTheme();
     saveSettings();
@@ -1563,6 +1587,11 @@
 
     ensureLiquidGlassFilter();
     settingsState = loadSettings();
+    settingsDefaults = {};
+    (DATA.settings || []).forEach(function (item) {
+      if (item && item.id && item.value !== undefined) settingsDefaults[item.id] = item.value;
+    });
+    themeDefault = (DATA.theme && DATA.theme.accent) || "";
     themeColor(DATA.theme && DATA.theme.accent);
     applySettings();
     applyTheme();
