@@ -228,6 +228,7 @@ window.DATA = {
           ]
         },
         { name: "readme.txt", type: "file", content: "это окно файлов.\nпапки открываются кликом, файлы показываются снизу." },
+        { name: "схема.svg", type: "file", kind: "image", src: "assets/photo-2.svg" },
         { name: "пустая-папка", type: "folder", children: [] }
       ]
     }
@@ -254,12 +255,15 @@ window.DATA = {
 
   /* Настройки окна «настройки».
      group — заголовок раздела, type — вид переключателя.
-     type: toggle | select | wallpaper. */
+     type: toggle | select | number | wallpaper. */
   settings: [
     { id: "theme", type: "select", group: "вид", label: "тема", hint: "светлая, тёмная или как в системе", value: "dark", options: [["light", "светлая"], ["dark", "тёмная"], ["auto", "как в системе"]] },
     { id: "motion", type: "toggle", group: "вид", label: "анимации окон", hint: "сворачивание и закрытие", value: true },
     { id: "tooltips", type: "toggle", group: "вид", label: "подсказки дока", hint: "названия приложений при наведении", value: true },
     { id: "bigtext", type: "toggle", group: "вид", label: "крупный текст", hint: "чуть больше шрифта во всех окнах", value: false },
+    { id: "style", type: "select", group: "вид", label: "стиль интерфейса", hint: "оболочка окон и дока; ключевой цвет не меняется", value: "desktop", options: [["desktop", "как сейчас"], ["win98", "windows 98"], ["aero", "aero · windows 7"], ["hypr", "hyprland · минимализм"]] },
+    { id: "dockmode", type: "select", group: "док", label: "режим дока", hint: "плавающий справа или полоса во всю ширину снизу", value: "float", options: [["float", "плавающий"], ["iphone", "как на айфоне"]] },
+    { id: "docksize", type: "number", group: "док", label: "размер иконок дока", hint: "28–64 точек", value: 44, min: 28, max: 64 },
     { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "dots", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
     { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата на рабочем столе", value: true },
     { id: "clockpos", type: "select", group: "рабочий стол", label: "где часы", hint: "угол, центр или своё место", value: "tr", options: [["tl", "слева сверху"], ["tc", "сверху по центру"], ["tr", "справа сверху"], ["bl", "слева снизу"], ["bc", "снизу по центру"], ["br", "справа снизу"], ["center", "по центру"], ["custom", "своё место"]] },
