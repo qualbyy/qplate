@@ -1756,6 +1756,29 @@ blockquote {
   outline: none;
 }
 
+/* Вотермарка в конце настроек */
+.settings-watermark {
+  margin-top: 14px;
+  padding-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  border-top: 1px dashed var(--border);
+}
+
+.settings-watermark a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.settings-watermark a:hover,
+.settings-watermark a:focus-visible {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 /* ------------------------------------------------------------
    Жидкое стекло (liquid glass) — элементы приложений
    ------------------------------------------------------------ */

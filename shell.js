@@ -1,5 +1,5 @@
 /* ============================================================
-   shell.js — менеджер окон и дока
+   shell.js — менеджер окон и дока (qualbyy)
    Собирает окна из DATA.windows, не требует сборки.
    ============================================================ */
 
@@ -1416,6 +1416,8 @@
 
   /* ---------- Публичный доступ ---------- */
 
+  /* qualbyy runtime signature */
+  window.__qualbyy = "qualbyy.github.io";
   window.WindowManager = {
     open: openWindow,
     close: closeWindow,

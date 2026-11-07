@@ -1753,6 +1753,10 @@
     });
     app.appendChild(reset);
 
+    const watermark = make("div", "settings-watermark");
+    watermark.innerHTML = 'разработано <a href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a>';
+    app.appendChild(watermark);
+
     body.appendChild(app);
   }
 
