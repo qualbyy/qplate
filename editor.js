@@ -18,6 +18,11 @@
   let saveTimer = null;
   /* Пока плашка пресета на экране, обычные статусы её не затирают. */
   let noticeActive = false;
+  /* Предупреждение о liquid glass спрашиваем один раз за сессию. */
+  let glassWarned = false;
+  let glassNotice = null;
+  /* Вернуть прежний стиль, если пользователь отказался от стекла. */
+  let revertGlass = null;
 
   /* ---------- Мелкие помощники ---------- */
 
@@ -348,10 +353,30 @@
   }
 
   function applyDraft() {
+    if (glassSelected() && !isGlassLive() && !glassWarned) {
+      const previous = currentStyleValue();
+      /* «Сохранить сайт» сперва зовёт commit(): отказ возвращает прежний стиль. */
+      revertGlass = function () {
+        const list = (draft.settings || []).concat((DATA.settings || []).filter(function (live) {
+          return live && live.id === "style";
+        }));
+        const seen = [];
+        list.forEach(function (item) {
+          if (!item || item.id !== "style" || seen.indexOf(item) >= 0) return;
+          seen.push(item);
+          item.value = previous;
+        });
+        saveDraft();
+      };
+      showGlassWarning();
+      return Promise.resolve(false);
+    }
+
     commit();
     saveDraft();
     if (window.WindowManager && WindowManager.sync) WindowManager.sync();
     setStatus("применено: сайт обновился", "ok");
+    return Promise.resolve(true);
   }
 
   /* Возвращает набор открытых окон к значениям data.js (open: true). */
@@ -392,6 +417,131 @@
     if (window.WindowManager && WindowManager.sync) WindowManager.sync();
     restoreDefaultLayout();
     window.location.reload();
+  }
+
+  /* ---------- Предупреждение о liquid glass ----------
+     Стекло считается на видеокарте (feDisplacementMap), поэтому на слабых
+     машинах может лагать. Перед переключением показываем объяснение. */
+
+  const GLASS_TEXT = "стиль liquid glass — самый тяжёлый в конструкторе: " +
+    "размытие и преломление света пересчитываются на видеокарте при каждом движении. " +
+    "на ноутбуках и слабых компьютерах рабочий стол может лагать. " +
+    "если станет тяжело, верните стиль «по умолчанию» или «aero».";
+
+  /* Стекло уже включено на рабочем столе — второй раз не предупреждаем. */
+  function isGlassLive() {
+    return document.body.dataset.style === "glass";
+  }
+
+  function glassSelected() {
+    return (draft.settings || []).some(function (item) {
+      return item && item.id === "style" && item.value === "glass";
+    });
+  }
+
+  function showGlassWarning() {
+    if (!glassNotice) return;
+    glassNotice.classList.add("is-on");
+    glassNotice.setAttribute("aria-hidden", "false");
+    const ok = glassNotice.querySelector(".ed-glass-notice-yes");
+    if (ok) ok.focus();
+  }
+
+  /* Закрытие без согласия: стекло не включаем, стиль возвращается прежний. */
+  function dismissGlassWarning() {
+    if (glassNotice) {
+      glassNotice.classList.remove("is-on");
+      glassNotice.setAttribute("aria-hidden", "true");
+    }
+    const undo = revertGlass;
+    revertGlass = null;
+    if (typeof undo === "function") undo();
+    renderSettingsTab();
+  }
+
+  function acceptGlass() {
+    glassWarned = true;
+    revertGlass = null;
+    /* Запоминаем согласие и для окна настроек: второй раз не спрашиваем. */
+    if (window.WindowManager && window.WindowManager.allowGlass) window.WindowManager.allowGlass();
+    if (glassNotice) {
+      glassNotice.classList.remove("is-on");
+      glassNotice.setAttribute("aria-hidden", "true");
+    }
+    renderSettingsTab();
+    setStatus("стиль liquid glass выбран: нажмите «применить»", "ok");
+  }
+
+  /* Стиль, который сейчас показан на рабочем столе (или сохранён). */
+  function currentStyleValue() {
+    const live = document.body.dataset.style;
+    if (live && live !== "glass") return live;
+    if (window.WindowManager && window.WindowManager.getSettings) {
+      const shown = window.WindowManager.getSettings().style;
+      if (shown && shown !== "glass") return shown;
+    }
+    const saved = (draft.settings || []).filter(function (item) {
+      return item && item.id === "style";
+    })[0];
+    return (saved && saved.value) || "desktop";
+  }
+
+  /* Перерисовываем только вкладку настроек, не трогая остальные. */
+  function renderSettingsTab() {
+    if (activeTab === "settings") renderPanel();
+  }
+
+  function buildGlassNotice() {
+    if (glassNotice) return glassNotice;
+
+    const overlay = el("div", "ed-dialog ed-glass-notice");
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("aria-labelledby", "ed-glass-notice-title");
+
+    const card = el("div", "ed-dialog-card");
+
+    const head = el("div", "ed-card-head");
+    const title = el("div", "ed-dialog-title", "внимание: liquid glass");
+    title.id = "ed-glass-notice-title";
+    head.appendChild(title);
+    const close = el("button", "ed-mini", "закрыть");
+    close.type = "button";
+    close.addEventListener("click", dismissGlassWarning);
+    head.appendChild(close);
+    card.appendChild(head);
+
+    card.appendChild(el("div", "ed-dialog-text ed-glass-notice-text", GLASS_TEXT));
+
+    const actions = el("div", "ed-dialog-actions ed-glass-notice-actions");
+    const cancel = el("button", "ed-btn", "оставить прежний стиль");
+    cancel.type = "button";
+    cancel.addEventListener("click", dismissGlassWarning);
+
+    const ok = el("button", "ed-btn ed-btn-main ed-glass-notice-yes", "включить стекло");
+    ok.type = "button";
+    ok.addEventListener("click", acceptGlass);
+
+    actions.appendChild(cancel);
+    actions.appendChild(ok);
+    card.appendChild(actions);
+
+    overlay.addEventListener("mousedown", function (ev) {
+      if (ev.target === overlay) dismissGlassWarning();
+    });
+
+    overlay.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        dismissGlassWarning();
+      }
+    });
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    glassNotice = overlay;
+    return overlay;
   }
 
   /* ---------- Поля формы ---------- */
@@ -2295,10 +2445,23 @@
       select.addEventListener("change", function () {
         item.value = select.value;
         queueSave();
+        /* Стекло тяжёлое: предупреждаем перед включением. */
+        if (item.id === "style" && select.value === "glass" && !glassWarned && !isGlassLive()) {
+          const previous = currentStyleValue();
+          revertGlass = function () {
+            item.value = previous;
+            saveDraft();
+          };
+          showGlassWarning();
+        }
       });
       valueRow.appendChild(select);
     }
     card.appendChild(valueRow);
+
+    if (item.id === "style") {
+      card.appendChild(el("div", "ed-hint ed-glass-note", "liquid glass — самый тяжёлый стиль: на слабых компьютерах может лагать. при выборе покажем предупреждение."));
+    }
 
     if (item.type !== "toggle" && Array.isArray(item.options)) {
       if (!Array.isArray(item.locked)) item.locked = [];
@@ -2385,6 +2548,8 @@
     topBar.appendChild(clearSettingsBtn);
     box.appendChild(topBar);
 
+    if (!glassNotice) buildGlassNotice();
+
     box.appendChild(el("div", "ed-hint", "значения станут начальными для готового сайта. заблокированное нельзя будет выбрать, скрытое исчезнет из окна настроек. новые пункты — док, сторона дока, подсказки hypr и их размер — правятся здесь же."));
 
     if (!Array.isArray(draft.theme.locked)) draft.theme.locked = [];
@@ -2410,6 +2575,26 @@
     }));
     colors.appendChild(custom);
     box.appendChild(colors);
+
+    const glassCard = el("div", "ed-card");
+    glassCard.appendChild(el("div", "ed-card-title", "liquid glass"));
+    preview.appendChild(el("div", "ed-hint", "посмотреть предупреждение о тяжёлом стиле ещё раз. согласие помнится до очистки настроек."));
+    const glassBtn = el("button", "ed-btn", "показать предупреждение");
+    glassBtn.type = "button";
+    glassBtn.addEventListener("click", function () {
+      const styleItem = (draft.settings || []).filter(function (item) {
+        return item && item.id === "style";
+      })[0];
+      if (styleItem) {
+        const previous = styleItem.value;
+        revertGlass = function () { styleItem.value = previous; };
+      } else {
+        revertGlass = null;
+      }
+      showGlassWarning();
+    });
+    glassCard.appendChild(glassBtn);
+    box.appendChild(glassCard);
 
     draft.settings.forEach(function (item) {
       box.appendChild(settingsItemCard(item));

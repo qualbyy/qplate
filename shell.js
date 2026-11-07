@@ -685,6 +685,19 @@
 
     if (item && Array.isArray(item.locked) && item.locked.indexOf(String(value)) >= 0) return;
 
+    /* Стекло включает только после согласия: иначе стиль не меняется. */
+    if (id === "style" && value === "glass" && !glassAccepted()) {
+      confirmGlass(GLASS_TEXT).then(function (sure) {
+        if (sure) {
+          rememberGlass();
+          applySetting("style", "glass");
+        } else if (window.WindowManager && windows.has("settings")) {
+          window.WindowManager.refresh("settings");
+        }
+      });
+      return;
+    }
+
     if (item && item.type === "number") {
       settingsState[id] = clampNumber(item, value);
     } else {
@@ -1398,6 +1411,96 @@
     document.removeEventListener("pointercancel", endDrag);
   }
 
+  /* ---------- Предупреждение о liquid glass ----------
+     Стекло тяжёлое для видеокарты, поэтому включается только после
+     согласия. Окно настройки и конструктор могут спросить первыми —
+     их согласие фиксируется в localStorage. */
+
+  const glassKey = "desktop-glass-warning-v1";
+  const GLASS_TEXT = "стиль liquid glass — самый тяжёлый в конструкторе: размытие и преломление света считаются " +
+    "на видеокарте при каждом движении. на слабых компьютерах рабочий стол может лагать. включить стекло?";
+
+  function glassAccepted() {
+    try {
+      return localStorage.getItem(glassKey) === "yes";
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function rememberGlass() {
+    try {
+      localStorage.setItem(glassKey, "yes");
+    } catch (err) {
+      /* хранилище может быть недоступно */
+    }
+  }
+
+  function confirmGlass(question, okLabel) {
+    return new Promise(function (resolve) {
+      const overlay = document.createElement("div");
+      overlay.className = "glass-dialog";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+
+      const card = document.createElement("div");
+      card.className = "glass-dialog-card";
+
+      const title = document.createElement("div");
+      title.className = "glass-dialog-title";
+      title.textContent = "внимание: liquid glass";
+      card.appendChild(title);
+
+      const text = document.createElement("div");
+      text.className = "glass-dialog-text";
+      text.textContent = question;
+      card.appendChild(text);
+
+      const row = document.createElement("div");
+      row.className = "glass-dialog-actions";
+
+      const cancel = document.createElement("button");
+      cancel.className = "glass-dialog-btn";
+      cancel.type = "button";
+      cancel.textContent = "оставить прежний стиль";
+
+      const ok = document.createElement("button");
+      ok.className = "glass-dialog-btn is-main";
+      ok.type = "button";
+      ok.textContent = okLabel || "включить стекло";
+
+      let done = false;
+      function finish(result) {
+        if (done) return;
+        done = true;
+        document.removeEventListener("keydown", onKey, true);
+        overlay.remove();
+        resolve(result);
+      }
+
+      function onKey(ev) {
+        if (ev.key === "Escape") {
+          ev.preventDefault();
+          finish(false);
+        }
+      }
+
+      cancel.addEventListener("click", function () { finish(false); });
+      ok.addEventListener("click", function () { finish(true); });
+      overlay.addEventListener("mousedown", function (ev) {
+        if (ev.target === overlay) finish(false);
+      });
+      document.addEventListener("keydown", onKey, true);
+
+      row.appendChild(cancel);
+      row.appendChild(ok);
+      card.appendChild(row);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      ok.focus();
+    });
+  }
+
   /* ---------- Изменение размера экрана ---------- */
 
   function onResize() {
@@ -1443,6 +1546,8 @@
   /* qualbyy runtime signature */
   window.__qualbyy = "qualbyy.github.io";
   window.WindowManager = {
+    /* Конструктор отмечает этим согласие на тяжёлое стекло. */
+    allowGlass: rememberGlass,
     open: openWindow,
     close: closeWindow,
     minimize: minimizeWindow,

@@ -1514,3 +1514,98 @@ body.theme-dark .dock-tooltip-float {
 body.no-tooltips .dock-tooltip-float {
   display: none;
 }
+
+/* ------------------------------------------------------------
+   Предупреждение о liquid glass
+   ------------------------------------------------------------ */
+
+.glass-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.42);
+  animation: glass-dialog-in 0.15s ease;
+}
+
+.glass-dialog-card {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border-dark);
+  border-radius: 10px;
+  background: var(--surface-paper);
+  box-shadow: 0 18px 40px rgba(var(--accent-rgb), 0.3);
+}
+
+.glass-dialog-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sand-dark);
+}
+
+.glass-dialog-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.glass-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.glass-dialog-btn {
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border-dark);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.glass-dialog-btn:hover {
+  background: var(--dock-hover-bg);
+  border-color: var(--accent);
+}
+
+.glass-dialog-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.glass-dialog-btn.is-main {
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.glass-dialog-btn.is-main:hover {
+  background: var(--accent-dark);
+}
+
+@keyframes glass-dialog-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+body.no-motion .glass-dialog {
+  animation: none;
+}
+
+@media (max-width: 480px) {
+  .glass-dialog-actions .glass-dialog-btn {
+    flex: 1 1 100%;
+  }
+}
