@@ -1075,6 +1075,10 @@
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+.cf-item.cf-auto .cf-art {
+  filter: hue-rotate(var(--cf-hue, 0deg)) saturate(1.2);
+}
+
 .cf-item.is-active .cf-art,
 .cf-item:hover .cf-art {
   border-color: rgba(var(--cf-a), 0.82);

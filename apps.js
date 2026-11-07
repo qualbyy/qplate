@@ -1049,17 +1049,26 @@
       item.type = "button";
       item.setAttribute("aria-label", (track.title || "трек") + ", " + (track.artist || ""));
 
+      const auto = !track.cover;
+      const autoIndex = index % 4;
       const art = make("img", "cf-art");
       if (data.coverMode === "accent") art.classList.add("is-accent");
       art.alt = "";
-      art.addEventListener("load", function () {
-        paintCoverColors(item, art);
-      });
+      if (auto) {
+        item.classList.add("cf-auto");
+        item.style.setProperty("--cf-hue", [152, 82, 230, -24][autoIndex] + "deg");
+        item.style.setProperty("--cf-a", [[96, 150, 196], [104, 168, 116], [156, 122, 196], [200, 132, 96]][autoIndex].join(", "));
+        item.style.setProperty("--cf-b", [[52, 92, 132], [58, 108, 72], [96, 68, 130], [130, 74, 48]][autoIndex].join(", "));
+      } else {
+        art.addEventListener("load", function () {
+          paintCoverColors(item, art);
+        });
+      }
       art.addEventListener("error", function () {
         art.classList.add("is-missing");
       });
       art.src = track.cover || data.cover || "";
-      if (art.complete && art.naturalWidth) paintCoverColors(item, art);
+      if (!auto && art.complete && art.naturalWidth) paintCoverColors(item, art);
 
       const name = make("span", "cf-name", track.title || "без названия");
       item.appendChild(art);
@@ -1362,8 +1371,9 @@
      ========================================================== */
 
   function renderSettings(body, cfg, ctx) {
+    const now = ctx.getSettings();
     const items = (Array.isArray(DATA.settings) ? DATA.settings : []).filter(function (item) {
-      return item && !item.hidden;
+      return item && !item.hidden && (!item.only || now.style === item.only);
     });
     const app = make("div", "app-settings");
 

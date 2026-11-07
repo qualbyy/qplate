@@ -571,6 +571,7 @@
     document.body.dataset.dockmode = settingsState.dockmode || "float";
     document.body.dataset.dockplace = settingsState.dockplace || "right";
     document.documentElement.style.setProperty("--dock-size", clampNumber({ min: 28, max: 64, value: 44 }, settingsState.docksize) + "px");
+    document.documentElement.style.setProperty("--hint-size", clampNumber({ min: 8, max: 16, value: 10 }, settingsState.hintsize) + "px");
 
     ["tl", "tc", "tr", "bl", "bc", "br", "center", "custom"].forEach(function (pos) {
       document.body.classList.toggle("clock-pos-" + pos, (settingsState.clockpos || "tr") === pos);
@@ -616,6 +617,7 @@
     if (id === "theme") applyTheme();
     if (id === "positions" && settingsState.positions === false) clearPositions();
     if ((id === "dockmode" || id === "docksize" || id === "dockplace") && windows.size) clampOpenWindows();
+    if (id === "style" && windows.has("settings")) window.WindowManager.refresh("settings");
   }
 
   /* ---------- Сборка окна ---------- */

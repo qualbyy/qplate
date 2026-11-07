@@ -178,6 +178,9 @@
     if (!Array.isArray(d.terminal.fastfetch.rows)) d.terminal.fastfetch.rows = [];
     if (!Array.isArray(d.windows)) d.windows = clone(DATA.windows || []);
     if (!Array.isArray(d.settings)) d.settings = clone(DATA.settings || []);
+    (DATA.settings || []).forEach(function (item) {
+      if (!d.settings.some(function (s) { return s && s.id === item.id; })) d.settings.push(clone(item));
+    });
     if (!d.theme) d.theme = clone(DATA.theme || {});
     if (!Array.isArray(d.theme.presets)) d.theme.presets = clone((DATA.theme && DATA.theme.presets) || []);
     if (!Array.isArray(d.theme.locked)) d.theme.locked = [];
@@ -1562,7 +1565,11 @@
     colors.appendChild(custom);
     box.appendChild(colors);
 
+    const styleItem = draft.settings.filter(function (s) { return s.id === "style"; })[0];
+    const styleNow = styleItem ? styleItem.value : "desktop";
+
     draft.settings.forEach(function (item) {
+      if (item.only && styleNow !== item.only) return;
       box.appendChild(settingsItemCard(item));
     });
 

@@ -799,7 +799,7 @@ body[data-style="hypr"] .hotkey-hints {
   border: 0;
   box-shadow: none;
   z-index: 900;
-  font-size: 10px;
+  font-size: var(--hint-size, 10px);
   color: var(--text-dim);
   opacity: 0.35;
   transition: opacity 0.2s ease;
