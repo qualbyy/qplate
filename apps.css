@@ -2252,3 +2252,970 @@ body.theme-dark[data-style="glass"] .music-btn:hover {
   background: rgba(var(--accent-rgb), 0.25);
   border-color: var(--sand-accent);
 }
+
+/* ------------------------------------------------------------
+   Стиль Windows 98 — элементы приложений
+   ------------------------------------------------------------ */
+
+/* Общие кнопки и элементы управления */
+body[data-style="win98"] .icon-btn,
+body[data-style="win98"] .nav-btn,
+body[data-style="win98"] .nav-icon-btn,
+body[data-style="win98"] .preview-action,
+body[data-style="win98"] .pdf-download,
+body[data-style="win98"] .setting-pick,
+body[data-style="win98"] .settings-reset,
+body[data-style="win98"] .music-back {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  background: var(--surface-mute);
+  color: var(--text);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+  transition: none;
+}
+
+body[data-style="win98"] .icon-btn:hover:not(:disabled),
+body[data-style="win98"] .nav-btn:hover,
+body[data-style="win98"] .nav-icon-btn:hover,
+body[data-style="win98"] .preview-action:hover,
+body[data-style="win98"] .pdf-download:hover,
+body[data-style="win98"] .setting-pick:hover,
+body[data-style="win98"] .settings-reset:hover,
+body[data-style="win98"] .music-back:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+  transform: none;
+}
+
+body[data-style="win98"] .icon-btn:active:not(:disabled),
+body[data-style="win98"] .nav-btn:active,
+body[data-style="win98"] .nav-icon-btn:active,
+body[data-style="win98"] .preview-action:active,
+body[data-style="win98"] .pdf-download:active,
+body[data-style="win98"] .setting-pick:active,
+body[data-style="win98"] .settings-reset:active,
+body[data-style="win98"] .music-back:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+  transform: translate(1px, 1px);
+}
+
+/* Вдавленные поля ввода (sunken inputs) */
+body[data-style="win98"] .setting-select,
+body[data-style="win98"] .setting-input,
+body[data-style="win98"] .browser-url,
+body[data-style="win98"] .url-bar,
+body[data-style="win98"] .cmd-input {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  background-color: var(--surface-paper);
+  color: var(--text);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35), inset -1px -1px 0 var(--surface-paper);
+}
+
+/* Слайдер и прогресс-бар в плеере */
+body[data-style="win98"] input[type="range"],
+body[data-style="win98"] .music-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 22px;
+  cursor: pointer;
+  accent-color: auto;
+}
+
+body[data-style="win98"] .music-range::-webkit-slider-runnable-track,
+body[data-style="win98"] input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  background: var(--surface-deep);
+  border: 1px solid var(--border-dark);
+  border-bottom-color: var(--surface-paper);
+  border-right-color: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35);
+  border-radius: 0;
+}
+
+body[data-style="win98"] .music-range::-moz-range-track,
+body[data-style="win98"] input[type="range"]::-moz-range-track {
+  height: 5px;
+  background: var(--surface-deep);
+  border: 1px solid var(--border-dark);
+  border-bottom-color: var(--surface-paper);
+  border-right-color: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35);
+  border-radius: 0;
+}
+
+body[data-style="win98"] .music-range::-webkit-slider-thumb,
+body[data-style="win98"] input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 20px;
+  margin-top: -9px;
+  border-radius: 0;
+  background: var(--surface-mute);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+body[data-style="win98"] .music-range::-moz-range-thumb,
+body[data-style="win98"] input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 20px;
+  border-radius: 0;
+  background: var(--surface-mute);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+body[data-style="win98"] .music-range:active::-webkit-slider-thumb,
+body[data-style="win98"] input[type="range"]:active::-webkit-slider-thumb {
+  background: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+}
+
+body[data-style="win98"] .music-range:active::-moz-range-thumb,
+body[data-style="win98"] input[type="range"]:active::-moz-range-thumb {
+  background: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+}
+
+/* Кнопки плеера */
+body[data-style="win98"] .music-btn {
+  border-radius: 0;
+  width: 32px;
+  height: 30px;
+  border: 1px solid var(--border-dark);
+  background: var(--surface-mute);
+  color: var(--text);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+  transform: none;
+  transition: none;
+}
+
+body[data-style="win98"] .music-btn:hover,
+body[data-style="win98"] .music-btn:focus-visible {
+  background: var(--surface-soft);
+  transform: none;
+}
+
+body[data-style="win98"] .music-btn:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+  transform: translate(1px, 1px);
+}
+
+body[data-style="win98"] .music-btn.play {
+  width: 44px;
+  height: 36px;
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  background: var(--surface-mute);
+  color: var(--text);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+body[data-style="win98"] .music-btn.play:hover {
+  background: var(--surface-soft);
+}
+
+body[data-style="win98"] .music-btn.play:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+  transform: translate(1px, 1px);
+}
+
+/* Карточка плеера и обложка */
+body[data-style="win98"] .music-card {
+  border-radius: 0;
+  border: 2px solid var(--border-dark);
+  background: var(--surface-mute);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+body[data-style="win98"] .music-cover {
+  border-radius: 0;
+  border: 2px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+body[data-style="win98"] .music-coverflow-stage,
+body[data-style="win98"] .cf-item,
+body[data-style="win98"] .cf-art,
+body[data-style="win98"] .cf-item::before,
+body[data-style="win98"] .cf-name {
+  border-radius: 0;
+}
+
+body[data-style="win98"] .cf-art {
+  border: 1px solid var(--border-dark);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+body[data-style="win98"] .cf-name {
+  background: var(--surface-paper);
+  border: 1px solid var(--border-dark);
+}
+
+/* Настройки: вкладки, переключатели, палитра */
+body[data-style="win98"] .settings-tabs {
+  border-bottom: 2px solid var(--border-dark);
+  gap: 2px;
+}
+
+body[data-style="win98"] .settings-tab {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  border-bottom: 0;
+  background: var(--surface-mute);
+  box-shadow: inset 1px 1px 0 var(--surface-paper);
+  margin-bottom: -2px;
+  padding: 6px 12px;
+}
+
+body[data-style="win98"] .settings-tab:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+body[data-style="win98"] .settings-tab.is-active {
+  background: var(--surface-paper);
+  color: var(--text);
+  border-color: var(--border-dark);
+  border-bottom: 2px solid var(--surface-paper);
+  font-weight: 700;
+}
+
+body[data-style="win98"] .setting-toggle {
+  border-radius: 0;
+  width: 36px;
+  height: 20px;
+  background: var(--surface-deep);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.4), inset -1px -1px 0 var(--surface-paper);
+  transition: none;
+}
+
+body[data-style="win98"] .setting-toggle::after {
+  border-radius: 0;
+  width: 14px;
+  height: 14px;
+  top: 2px;
+  left: 2px;
+  background: var(--surface-mute);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s ease;
+}
+
+body[data-style="win98"] .setting-toggle[aria-checked="true"] {
+  background: var(--sand-accent);
+  border-color: var(--sand-dark);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+body[data-style="win98"] .setting-toggle[aria-checked="true"]::after {
+  transform: translateX(16px);
+  background: var(--surface-paper);
+}
+
+body[data-style="win98"] .swatch {
+  border-radius: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.4), inset -1px -1px 0 var(--surface-paper);
+  transition: none;
+}
+
+body[data-style="win98"] .swatch:hover,
+body[data-style="win98"] .swatch:focus-visible {
+  transform: none;
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), 0 0 0 1px var(--text);
+}
+
+body[data-style="win98"] .swatch.is-active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), 0 0 0 2px var(--text);
+  outline: 1px dotted var(--text);
+  outline-offset: 1px;
+}
+
+/* Браузер: вкладки, тулбар и карточки */
+body[data-style="win98"] .browser-chrome,
+body[data-style="win98"] .browser-toolbar {
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--border-dark);
+}
+
+body[data-style="win98"] .browser-tabs {
+  border-bottom: 2px solid var(--border-dark);
+  gap: 2px;
+}
+
+body[data-style="win98"] .browser-tab {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  border-bottom: 0;
+  background: var(--surface-mute);
+  box-shadow: inset 1px 1px 0 var(--surface-paper);
+  margin-bottom: -2px;
+}
+
+body[data-style="win98"] .browser-tab:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+body[data-style="win98"] .browser-tab.active {
+  background: var(--surface-paper);
+  color: var(--text);
+  border-color: var(--border-dark);
+  border-bottom: 2px solid var(--surface-paper);
+  font-weight: 700;
+}
+
+/* Документ / PDF */
+body[data-style="win98"] .pdf-sheet {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+body[data-style="win98"] .pdf-toolbar {
+  border-top: 2px solid var(--border-dark);
+}
+
+/* Файлы */
+body[data-style="win98"] .files-toolbar {
+  border-bottom: 2px solid var(--border-dark);
+}
+
+body[data-style="win98"] .breadcrumb,
+body[data-style="win98"] .file-row {
+  border-radius: 0;
+}
+
+body[data-style="win98"] .file-row:hover,
+body[data-style="win98"] .file-row:focus-visible {
+  background: var(--surface-mute);
+  outline: 1px dotted var(--text);
+}
+
+body[data-style="win98"] .file-row.is-active {
+  background: var(--sand-accent);
+  color: var(--on-accent);
+}
+
+body[data-style="win98"] .file-preview {
+  border-radius: 0;
+  border-left: 2px solid var(--border-dark);
+}
+
+/* Заметки, Фото и карточки */
+body[data-style="win98"] .note-card,
+body[data-style="win98"] .photo-card,
+body[data-style="win98"] .photo-item,
+body[data-style="win98"] .demo-card {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+body[data-style="win98"] .tag,
+body[data-style="win98"] .badge,
+body[data-style="win98"] .link-pill {
+  border-radius: 0;
+  border: 1px solid var(--border-dark);
+}
+
+/* Тёмная тема: фаски в приложениях */
+body.theme-dark[data-style="win98"] .icon-btn,
+body.theme-dark[data-style="win98"] .nav-btn,
+body.theme-dark[data-style="win98"] .nav-icon-btn,
+body.theme-dark[data-style="win98"] .preview-action,
+body.theme-dark[data-style="win98"] .pdf-download,
+body.theme-dark[data-style="win98"] .setting-pick,
+body.theme-dark[data-style="win98"] .settings-reset,
+body.theme-dark[data-style="win98"] .music-back,
+body.theme-dark[data-style="win98"] .music-btn,
+body.theme-dark[data-style="win98"] .music-btn.play {
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.12), inset -1px -1px 0 rgba(0, 0, 0, 0.65);
+}
+
+body.theme-dark[data-style="win98"] .icon-btn:active:not(:disabled),
+body.theme-dark[data-style="win98"] .nav-btn:active,
+body.theme-dark[data-style="win98"] .nav-icon-btn:active,
+body.theme-dark[data-style="win98"] .preview-action:active,
+body.theme-dark[data-style="win98"] .pdf-download:active,
+body.theme-dark[data-style="win98"] .setting-pick:active,
+body.theme-dark[data-style="win98"] .settings-reset:active,
+body.theme-dark[data-style="win98"] .music-back:active,
+body.theme-dark[data-style="win98"] .music-btn:active,
+body.theme-dark[data-style="win98"] .music-btn.play:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.75), inset -1px -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ------------------------------------------------------------
+   Стиль Aero / Aqua — элементы приложений (Frutiger Aero)
+   ------------------------------------------------------------ */
+
+/* Общие кнопки и элементы управления (Aqua Jelly Buttons) */
+body[data-style="aero"] .icon-btn,
+body[data-style="aero"] .nav-btn,
+body[data-style="aero"] .nav-icon-btn,
+body[data-style="aero"] .preview-action,
+body[data-style="aero"] .pdf-download,
+body[data-style="aero"] .setting-pick,
+body[data-style="aero"] .settings-reset,
+body[data-style="aero"] .music-back {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(var(--accent-rgb), 0.08) 50%, rgba(255, 255, 255, 0.25) 100%),
+    var(--surface-mute);
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    0 2px 5px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(var(--accent-rgb), 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+body[data-style="aero"] .icon-btn:hover:not(:disabled),
+body[data-style="aero"] .nav-btn:hover,
+body[data-style="aero"] .nav-icon-btn:hover,
+body[data-style="aero"] .preview-action:hover,
+body[data-style="aero"] .pdf-download:hover,
+body[data-style="aero"] .setting-pick:hover,
+body[data-style="aero"] .settings-reset:hover,
+body[data-style="aero"] .music-back:hover {
+  transform: translateY(-1px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 48%, rgba(var(--accent-rgb), 0.14) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--hover-strong);
+  box-shadow:
+    0 0 10px rgba(var(--accent-rgb), 0.45),
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 #ffffff;
+  color: var(--text);
+}
+
+body[data-style="aero"] .icon-btn:active:not(:disabled),
+body[data-style="aero"] .nav-btn:active,
+body[data-style="aero"] .nav-icon-btn:active,
+body[data-style="aero"] .preview-action:active,
+body[data-style="aero"] .pdf-download:active,
+body[data-style="aero"] .setting-pick:active,
+body[data-style="aero"] .settings-reset:active,
+body[data-style="aero"] .music-back:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.3),
+    0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Аудиоплеер — Слайдер прогресса и громкости (Aqua Glass Capsule) */
+body[data-style="aero"] .music-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  accent-color: var(--sand-accent);
+}
+
+body[data-style="aero"] .music-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.05) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--surface-inset);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22), 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+body[data-style="aero"] .music-range::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.05) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--surface-inset);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22), 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+body[data-style="aero"] .music-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, #ffffff 0%, rgba(255, 255, 255, 0.85) 25%, transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0.12) 100%),
+    var(--sand-accent);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 8px rgba(var(--accent-rgb), 0.5),
+    inset 0 1px 1px #ffffff,
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+body[data-style="aero"] .music-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, #ffffff 0%, rgba(255, 255, 255, 0.85) 25%, transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(0, 0, 0, 0.12) 100%),
+    var(--sand-accent);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 0 8px rgba(var(--accent-rgb), 0.5),
+    inset 0 1px 1px #ffffff,
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+body[data-style="aero"] .music-range:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 14px var(--sand-accent),
+    0 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px #ffffff;
+}
+
+body[data-style="aero"] .music-range:hover::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 14px var(--sand-accent),
+    0 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px #ffffff;
+}
+
+body[data-style="aero"] .music-range:active::-webkit-slider-thumb {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+  box-shadow:
+    0 0 18px var(--sand-accent),
+    0 1px 4px rgba(0, 0, 0, 0.35),
+    inset 0 1.5px 2px rgba(0, 0, 0, 0.3);
+}
+
+body[data-style="aero"] .music-range:active::-moz-range-thumb {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+  box-shadow:
+    0 0 18px var(--sand-accent),
+    0 1px 4px rgba(0, 0, 0, 0.35),
+    inset 0 1.5px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Кнопки плеера — Aqua жемчужины */
+body[data-style="aero"] .music-btn {
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(var(--accent-rgb), 0.08) 50%, rgba(255, 255, 255, 0.3) 100%),
+    var(--sand-badge);
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(var(--accent-rgb), 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+body[data-style="aero"] .music-btn:hover,
+body[data-style="aero"] .music-btn:focus-visible {
+  transform: translateY(-1px) scale(1.08);
+  box-shadow:
+    0 0 10px rgba(var(--accent-rgb), 0.5),
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 #ffffff;
+  filter: brightness(1.05);
+}
+
+body[data-style="aero"] .music-btn:active {
+  transform: scale(0.96);
+  box-shadow:
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+/* Главная кнопка воспроизведения — сияющая сфера */
+body[data-style="aero"] .music-btn.play {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 48%, rgba(0, 0, 0, 0.08) 50%, rgba(255, 255, 255, 0.2) 100%),
+    var(--sand-dark);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: var(--on-accent);
+  box-shadow:
+    0 6px 18px rgba(var(--accent-rgb), 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1.5px 0.5px rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+body[data-style="aero"] .music-btn.play:hover {
+  transform: translateY(-2px) scale(1.08);
+  box-shadow:
+    0 0 20px var(--sand-accent),
+    0 6px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1.5px 0.5px #ffffff;
+}
+
+body[data-style="aero"] .music-btn.play:active {
+  transform: scale(0.96);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Панели плеера и обложка */
+body[data-style="aero"] .music-card,
+body[data-style="aero"] .player-panel {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.2) 100%),
+    var(--surface-paper);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+body[data-style="aero"] .music-cover {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.16),
+    0 2px 6px rgba(var(--accent-rgb), 0.2),
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.8);
+}
+
+body[data-style="aero"] .track-row {
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .track-row:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(var(--accent-rgb), 0.12) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+body[data-style="aero"] .track-row.is-active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(var(--accent-rgb), 0.25) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 0 8px rgba(var(--accent-rgb), 0.3);
+}
+
+/* Окно «Настройки» — вкладки и контролы */
+body[data-style="aero"] .settings-tab {
+  border-radius: 8px 8px 0 0;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  border-bottom: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .settings-tab:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(var(--accent-rgb), 0.15) 100%),
+    var(--surface-paper);
+}
+
+body[data-style="aero"] .settings-tab.is-active {
+  background: var(--surface-paper);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  border-bottom: 1px solid var(--surface-paper);
+  box-shadow: inset 0 1.5px 0.5px rgba(255, 255, 255, 0.95), 0 -2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Переключатели (Toggles) — Aqua капсулы */
+body[data-style="aero"] .setting-toggle {
+  width: 42px;
+  height: 22px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.04) 50%, rgba(255, 255, 255, 0.3) 100%),
+    var(--surface-inset);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22), 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+body[data-style="aero"] .setting-toggle::after {
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.85) 25%, var(--surface-mute) 65%, var(--border-dark) 100%);
+  border: 0.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 1.5px 4px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1.5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body[data-style="aero"] .setting-toggle[aria-checked="true"] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 48%, rgba(0, 0, 0, 0.06) 50%, rgba(255, 255, 255, 0.25) 100%),
+    var(--sand-accent);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+body[data-style="aero"] .setting-toggle[aria-checked="true"]::after {
+  transform: translateX(20px);
+}
+
+/* Образцы цветов (Swatches) — стеклянные леденцы */
+body[data-style="aero"] .swatch {
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background-image: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.25) 30%, transparent 60%);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.35),
+    0 2px 5px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .swatch:hover {
+  transform: scale(1.15);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.95),
+    0 0 10px var(--sand-accent),
+    0 3px 6px rgba(0, 0, 0, 0.22);
+}
+
+body[data-style="aero"] .swatch.is-active {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 4px var(--sand-accent),
+    0 3px 8px rgba(0, 0, 0, 0.25);
+  transform: scale(1.1);
+}
+
+/* Выпадающие списки и поля ввода */
+body[data-style="aero"] .setting-select,
+body[data-style="aero"] .setting-number,
+body[data-style="aero"] input[type="text"],
+body[data-style="aero"] input[type="number"],
+body[data-style="aero"] select {
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--surface-paper) 0%, var(--surface-inset) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.85);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .setting-select:focus,
+body[data-style="aero"] .setting-number:focus,
+body[data-style="aero"] input:focus,
+body[data-style="aero"] select:focus {
+  border-color: var(--sand-accent);
+  box-shadow:
+    0 0 0 3px rgba(var(--accent-rgb), 0.35),
+    inset 0 1.5px 2px rgba(0, 0, 0, 0.08);
+  outline: none;
+}
+
+/* Браузер — вкладки и адресная строка */
+body[data-style="aero"] .browser-tab {
+  border-radius: 8px 8px 0 0;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  border-bottom: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+body[data-style="aero"] .browser-tab.active {
+  background: var(--surface-paper);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.95);
+}
+
+body[data-style="aero"] .browser-toolbar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--header-bg);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+body[data-style="aero"] .url-bar {
+  border-radius: 999px;
+  background: var(--surface-paper);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.85);
+  padding: 5px 12px;
+}
+
+/* Файлы — строки и хлебные крошки */
+body[data-style="aero"] .breadcrumb {
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  padding: 3px 8px;
+}
+
+body[data-style="aero"] .file-row {
+  border-radius: 6px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .file-row:hover,
+body[data-style="aero"] .file-row:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(var(--accent-rgb), 0.15) 100%),
+    var(--sand-badge);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+body[data-style="aero"] .file-row.is-active {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(var(--accent-rgb), 0.12) 50%, rgba(var(--accent-rgb), 0.28) 100%),
+    var(--surface-soft);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: inset 0 1px 0.5px #ffffff, 0 0 8px rgba(var(--accent-rgb), 0.35);
+}
+
+/* Документы / PDF */
+body[data-style="aero"] .pdf-sheet {
+  border-radius: 8px;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(var(--accent-rgb), 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+body[data-style="aero"] .pdf-toolbar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-soft);
+  border-top: 1px solid rgba(var(--accent-rgb), 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Заметки, фото, бейджи */
+body[data-style="aero"] .note-card,
+body[data-style="aero"] .photo-card {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 100%),
+    var(--surface-paper);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+body[data-style="aero"] .photo-card img {
+  border-radius: 8px;
+}
+
+body[data-style="aero"] .tag,
+body[data-style="aero"] .badge,
+body[data-style="aero"] .link-pill,
+body[data-style="aero"] .term-tag {
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 48%, rgba(var(--accent-rgb), 0.08) 50%, rgba(255, 255, 255, 0.25) 100%),
+    var(--surface-soft);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+body[data-style="aero"] .interactive-line {
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-inset);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Тёмная тема для приложений Aero */
+body.theme-dark[data-style="aero"] .icon-btn,
+body.theme-dark[data-style="aero"] .nav-btn,
+body.theme-dark[data-style="aero"] .nav-icon-btn,
+body.theme-dark[data-style="aero"] .preview-action,
+body.theme-dark[data-style="aero"] .pdf-download,
+body.theme-dark[data-style="aero"] .setting-pick,
+body.theme-dark[data-style="aero"] .settings-reset,
+body.theme-dark[data-style="aero"] .music-back,
+body.theme-dark[data-style="aero"] .music-btn {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 48%, rgba(var(--accent-rgb), 0.12) 50%, rgba(255, 255, 255, 0.08) 100%),
+    var(--surface-mute);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-dark[data-style="aero"] .music-btn.play {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 48%, rgba(0, 0, 0, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%),
+    var(--sand-dark);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(var(--accent-rgb), 0.4), inset 0 1px 0.5px rgba(255, 255, 255, 0.4);
+}
+
+body.theme-dark[data-style="aero"] .music-range::-webkit-slider-runnable-track,
+body.theme-dark[data-style="aero"] .music-range::-moz-range-track {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.2) 100%),
+    var(--surface-inset);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body.theme-dark[data-style="aero"] .setting-toggle {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%),
+    var(--surface-inset);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body.theme-dark[data-style="aero"] .setting-toggle::after {
+  background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 25%, var(--surface-mute) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.theme-dark[data-style="aero"] .settings-tab {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-soft);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+body.theme-dark[data-style="aero"] .settings-tab.is-active {
+  background: var(--surface-paper);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: inset 0 1.5px 0.5px rgba(255, 255, 255, 0.35);
+}
+
+body.theme-dark[data-style="aero"] .note-card,
+body.theme-dark[data-style="aero"] .photo-card,
+body.theme-dark[data-style="aero"] .music-card,
+body.theme-dark[data-style="aero"] .player-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(var(--accent-rgb), 0.06) 100%),
+    var(--surface-paper);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.35);
+}

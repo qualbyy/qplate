@@ -937,6 +937,155 @@ body.theme-dark[data-style="glass"] .ed-card {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
+/* ------------------------------------------------------------
+   Стиль Windows 98 для конструктора
+   ------------------------------------------------------------ */
+
+body[data-style="win98"] .ed-tab,
+body[data-style="win98"] .ed-card,
+body[data-style="win98"] .ed-btn,
+body[data-style="win98"] .ed-btn-main,
+body[data-style="win98"] .ed-btn-save,
+body[data-style="win98"] .ed-field input,
+body[data-style="win98"] .ed-select,
+body[data-style="win98"] .ed-textarea,
+body[data-style="win98"] .ed-code,
+body[data-style="win98"] .ed-dialog-window {
+  border-radius: 0;
+}
+
+body[data-style="win98"] .ed-btn,
+body[data-style="win98"] .ed-btn-main,
+body[data-style="win98"] .ed-btn-save {
+  border: 1px solid var(--border-dark);
+  background: var(--surface-mute);
+  color: var(--text);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
+  transition: none;
+}
+
+body[data-style="win98"] .ed-btn:hover,
+body[data-style="win98"] .ed-btn-main:hover,
+body[data-style="win98"] .ed-btn-save:hover {
+  background: var(--surface-soft);
+}
+
+body[data-style="win98"] .ed-btn:active,
+body[data-style="win98"] .ed-btn-main:active,
+body[data-style="win98"] .ed-btn-save:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.45);
+  transform: translate(1px, 1px);
+}
+
+body[data-style="win98"] .ed-field input,
+body[data-style="win98"] .ed-select,
+body[data-style="win98"] .ed-textarea,
+body[data-style="win98"] .ed-code {
+  border: 1px solid var(--border-dark);
+  background-color: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+body[data-style="win98"] .ed-tab.active {
+  background: var(--surface-paper);
+  border: 1px solid var(--border-dark);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------
+   Стиль Aero для конструктора (Frutiger Aero)
+   ------------------------------------------------------------ */
+
+body[data-style="aero"] .ed-card {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 100%),
+    var(--surface-paper);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+body[data-style="aero"] .ed-tab {
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+body[data-style="aero"] .ed-tab:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(var(--accent-rgb), 0.12) 100%),
+    var(--surface-mute);
+}
+
+body[data-style="aero"] .ed-tab.active {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 48%, rgba(0, 0, 0, 0.08) 50%, rgba(255, 255, 255, 0.2) 100%),
+    var(--sand-dark);
+  color: var(--on-accent);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35), inset 0 1px 0.5px rgba(255, 255, 255, 0.9);
+}
+
+body[data-style="aero"] .ed-btn,
+body[data-style="aero"] .ed-btn-save {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(var(--accent-rgb), 0.08) 50%, rgba(255, 255, 255, 0.25) 100%),
+    var(--surface-mute);
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+body[data-style="aero"] .ed-btn:hover,
+body[data-style="aero"] .ed-btn-save:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 48%, rgba(var(--accent-rgb), 0.14) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--hover-strong);
+  box-shadow:
+    0 0 10px rgba(var(--accent-rgb), 0.45),
+    0 3px 6px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 #ffffff;
+}
+
+body[data-style="aero"] .ed-btn-main {
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.2) 48%, rgba(0, 0, 0, 0.08) 50%, rgba(255, 255, 255, 0.2) 100%),
+    var(--sand-dark);
+  color: var(--on-accent);
+  box-shadow:
+    0 4px 14px rgba(var(--accent-rgb), 0.4),
+    inset 0 1.5px 0.5px rgba(255, 255, 255, 0.95);
+}
+
+body[data-style="aero"] .ed-btn-main:hover {
+  box-shadow:
+    0 0 16px var(--sand-accent),
+    0 5px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1.5px 0.5px #ffffff;
+}
+
+body[data-style="aero"] .ed-field input,
+body[data-style="aero"] .ed-select,
+body[data-style="aero"] .ed-textarea,
+body[data-style="aero"] .ed-code {
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--surface-paper) 0%, var(--surface-inset) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+body.theme-dark[data-style="aero"] .ed-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(var(--accent-rgb), 0.06) 100%),
+    var(--surface-paper);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
 /* ---------- Своё окно подтверждения ---------- */
 
 .ed-dialog {

@@ -947,25 +947,59 @@ body[data-style="win98"] .window {
   border: 2px solid var(--border-dark);
   border-radius: 0;
   background: var(--surface-paper);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.35), 3px 3px 0 rgba(0, 0, 0, 0.2);
 }
 
 body[data-style="win98"] .window.is-focused {
   border-color: var(--sand-accent);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.35), 4px 4px 0 rgba(0, 0, 0, 0.28);
 }
 
 body[data-style="win98"] .window-header {
-  min-height: 30px;
-  padding: 2px 8px;
+  min-height: 28px;
+  padding: 3px 6px;
   background: var(--header-bg);
   border-bottom: 2px solid var(--border-dark);
 }
 
+body[data-style="win98"] .window.is-focused .window-header {
+  background: var(--sand-accent);
+  color: var(--on-accent);
+}
+
 body[data-style="win98"] .window-title {
+  order: 1;
   text-align: left;
-  font-size: 12px;
+  font-size: 11.5px;
+  font-weight: 700;
   letter-spacing: 0;
+  padding-left: 2px;
+  color: var(--text-dim);
+}
+
+body[data-style="win98"] .window.is-focused .window-title {
+  color: var(--on-accent);
+}
+
+body[data-style="win98"] .window-controls {
+  order: 2;
+  margin-left: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+}
+
+body[data-style="win98"] .window-controls .btn-min {
+  order: 1;
+}
+
+body[data-style="win98"] .window-controls .btn-max {
+  order: 2;
+}
+
+body[data-style="win98"] .window-controls .btn-close {
+  order: 3;
 }
 
 body[data-style="win98"] .window-spacer {
@@ -973,18 +1007,68 @@ body[data-style="win98"] .window-spacer {
 }
 
 body[data-style="win98"] .win-btn {
-  width: 20px;
-  height: 18px;
-  margin-left: 2px;
+  width: 18px;
+  height: 16px;
+  margin-left: 1px;
   border: 1px solid var(--border-dark);
   border-radius: 0;
   background: var(--surface-mute);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 body[data-style="win98"] .win-btn::before {
-  width: 10px;
-  height: 10px;
   border-radius: 0;
+  transform: none !important;
+  filter: none !important;
+}
+
+body[data-style="win98"] .btn-min::before {
+  content: "";
+  display: block;
+  width: 7px;
+  height: 2px;
+  background: var(--text);
+  margin-top: 6px;
+}
+
+body[data-style="win98"] .btn-max::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 7px;
+  background: transparent;
+  border: 1.5px solid var(--text);
+  border-top-width: 2px;
+}
+
+body[data-style="win98"] .btn-close::before {
+  content: "\00d7";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 700;
+  margin-top: -1px;
+}
+
+body[data-style="win98"] .win-btn:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 var(--surface-paper);
+  transform: translate(1px, 1px);
+}
+
+body[data-style="win98"] .window-body {
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.12);
 }
 
 body[data-style="win98"] .side-dock {
@@ -993,66 +1077,300 @@ body[data-style="win98"] .side-dock {
   background: var(--surface-mute);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), 3px 3px 0 rgba(0, 0, 0, 0.18);
 }
 
 body[data-style="win98"] .dock-app {
   border: 1px solid var(--border-dark);
   border-radius: 0;
   background: var(--surface-paper);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.35);
 }
 
 body[data-style="win98"] .dock-app:hover,
 body[data-style="win98"] .dock-app:focus-visible {
   transform: none;
-  box-shadow: none;
-  background: var(--dock-hover-bg);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  background: var(--surface-soft);
 }
 
 body[data-style="win98"] .dock-app:active,
-body[data-style="win98"] .win-btn:active {
-  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.45);
+body[data-style="win98"] .dock-app.is-open {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.45), inset -1px -1px 0 var(--surface-paper);
   transform: translate(1px, 1px);
+  background: var(--surface-deep);
 }
 
 body[data-style="win98"] .dock-tooltip,
 body[data-style="win98"] .hotkey-hints,
 body[data-style="win98"] .hotkey-hint {
   border-radius: 0;
+  border: 1px solid var(--border-dark);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+body[data-style="win98"] ::-webkit-scrollbar {
+  width: 15px;
+  height: 15px;
+}
+
+body[data-style="win98"] ::-webkit-scrollbar-track {
+  background: var(--surface-deep);
+}
+
+body[data-style="win98"] ::-webkit-scrollbar-thumb {
+  background: var(--surface-mute);
+  border: 1px solid var(--border-dark);
+  box-shadow: inset 1px 1px 0 var(--surface-paper), inset -1px -1px 0 rgba(0, 0, 0, 0.4);
+  border-radius: 0;
+}
+
+body[data-style="win98"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-paper);
+}
+
+body[data-style="win98"] ::-webkit-scrollbar-thumb:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+body[data-style="win98"] {
+  scrollbar-width: auto;
+  scrollbar-color: var(--surface-mute) var(--surface-deep);
+}
+
+/* Тёмная тема: акцентные 3D-фаски для win98 */
+body.theme-dark[data-style="win98"] .window,
+body.theme-dark[data-style="win98"] .side-dock,
+body.theme-dark[data-style="win98"] .dock-app,
+body.theme-dark[data-style="win98"] .win-btn {
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.12), inset -1px -1px 0 rgba(0, 0, 0, 0.65), 3px 3px 0 rgba(0, 0, 0, 0.45);
+}
+
+body.theme-dark[data-style="win98"] .dock-app:active,
+body.theme-dark[data-style="win98"] .dock-app.is-open,
+body.theme-dark[data-style="win98"] .win-btn:active {
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.75), inset -1px -1px 0 rgba(255, 255, 255, 0.1);
 }
 
 body[data-style="aero"] .window {
-  border-radius: 12px 12px 9px 9px;
-  border-color: var(--border-dark);
-  background: var(--term-bg);
-  box-shadow: 0 18px 50px rgba(var(--accent-rgb), 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  border-radius: 14px 14px 10px 10px;
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(var(--accent-rgb), 0.08) 100%), var(--term-bg);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  box-shadow:
+    0 18px 50px rgba(var(--accent-rgb), 0.24),
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+body[data-style="aero"] .window.is-active {
+  box-shadow:
+    0 22px 60px rgba(var(--accent-rgb), 0.35),
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1.5px 0.5px #ffffff,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  border-color: rgba(var(--accent-rgb), 0.55);
 }
 
 body[data-style="aero"] .window-header {
-  min-height: 36px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), var(--header-bg) 65%);
-  border-bottom-color: rgba(255, 255, 255, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  min-height: 38px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.3) 48%, rgba(var(--accent-rgb), 0.08) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--header-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body[data-style="aero"] .window.is-active .window-header {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 48%, rgba(var(--accent-rgb), 0.16) 50%, rgba(255, 255, 255, 0.45) 100%),
+    var(--header-bg);
+}
+
+body[data-style="aero"] .window-title {
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Кнопки окна — леденцы Aqua / Frutiger Aero (Candy Gumdrops) */
+body[data-style="aero"] .win-btn {
+  width: 18px;
+  height: 24px;
 }
 
 body[data-style="aero"] .win-btn::before {
-  border-radius: 3px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.25);
+  background-image: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.5) 25%, transparent 60%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
+body[data-style="aero"] .btn-close::before {
+  background-color: #ff5f56;
+}
+
+body[data-style="aero"] .btn-min::before {
+  background-color: #ffbd2e;
+}
+
+body[data-style="aero"] .btn-max::before {
+  background-color: #27c93f;
+}
+
+body[data-style="aero"] .win-btn:hover::before {
+  transform: scale(1.16);
+  filter: brightness(1.1);
+}
+
+body[data-style="aero"] .btn-close:hover::before {
+  box-shadow:
+    0 0 8px rgba(255, 95, 86, 0.8),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+}
+
+body[data-style="aero"] .btn-min:hover::before {
+  box-shadow:
+    0 0 8px rgba(255, 189, 46, 0.8),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+}
+
+body[data-style="aero"] .btn-max:hover::before {
+  box-shadow:
+    0 0 8px rgba(39, 201, 63, 0.8),
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+}
+
+body[data-style="aero"] .win-btn:active::before {
+  transform: scale(0.94);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.5);
+  filter: brightness(0.9);
+}
+
+/* Стеклянная полка дока (Aero Glass Shelf) */
 body[data-style="aero"] .side-dock {
-  border-radius: 18px;
-  border-color: var(--border-dark);
-  background: var(--dock-bg);
-  backdrop-filter: blur(16px) saturate(1.25);
-  -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  box-shadow: 0 12px 34px rgba(var(--accent-rgb), 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.28) 48%, rgba(var(--accent-rgb), 0.1) 50%, rgba(255, 255, 255, 0.35) 100%),
+    var(--dock-bg);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.18),
+    0 2px 10px rgba(var(--accent-rgb), 0.25),
+    inset 0 1.5px 0.5px rgba(255, 255, 255, 0.95);
 }
 
 body[data-style="aero"] .dock-app {
-  border-radius: 11px;
-  background: linear-gradient(180deg, var(--surface-paper), var(--term-bg));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.25) 48%, rgba(var(--accent-rgb), 0.06) 50%, rgba(255, 255, 255, 0.3) 100%),
+    var(--surface-paper);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
+}
+
+body[data-style="aero"] .dock-app:hover,
+body[data-style="aero"] .dock-app:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.45) 48%, rgba(var(--accent-rgb), 0.18) 50%, rgba(255, 255, 255, 0.5) 100%),
+    var(--dock-hover-bg);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow:
+    0 0 14px rgba(var(--accent-rgb), 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0.5px #ffffff;
+  border-color: rgba(255, 255, 255, 0.95);
+}
+
+body[data-style="aero"] .dock-app.is-open {
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 0 0 2px rgba(var(--accent-rgb), 0.5),
+    0 2px 8px rgba(var(--accent-rgb), 0.3);
+}
+
+/* Скроллбары Aero Glass */
+body[data-style="aero"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+body[data-style="aero"] ::-webkit-scrollbar-track {
+  background: rgba(var(--accent-rgb), 0.05);
+  border-radius: 10px;
+}
+
+body[data-style="aero"] ::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(var(--accent-rgb), 0.3) 48%, rgba(var(--accent-rgb), 0.5) 50%, rgba(var(--accent-rgb), 0.35) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+body[data-style="aero"] ::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(var(--accent-rgb), 0.5) 48%, rgba(var(--accent-rgb), 0.7) 50%, rgba(var(--accent-rgb), 0.5) 100%);
+  box-shadow: inset 0 1px 0 #ffffff, 0 0 6px rgba(var(--accent-rgb), 0.4);
+}
+
+/* Тёмная тема для Aero */
+body.theme-dark[data-style="aero"] .window {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.55),
+    0 2px 10px rgba(var(--accent-rgb), 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+body.theme-dark[data-style="aero"] .window-header {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.07) 48%, rgba(var(--accent-rgb), 0.15) 50%, rgba(255, 255, 255, 0.09) 100%),
+    var(--header-bg);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+body.theme-dark[data-style="aero"] .window-title {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+body.theme-dark[data-style="aero"] .side-dock {
+  border-color: rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(var(--accent-rgb), 0.12) 100%),
+    var(--dock-bg);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.55),
+    0 2px 10px rgba(var(--accent-rgb), 0.25),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+body.theme-dark[data-style="aero"] .dock-app {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(var(--accent-rgb), 0.08) 100%),
+    var(--surface-paper);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 body[data-style="glass"] .window {
