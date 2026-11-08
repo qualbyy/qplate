@@ -400,6 +400,7 @@
       localStorage.removeItem(STORE);
       localStorage.removeItem("desktop-settings-v1");
       localStorage.removeItem("desktop-accent-v1");
+      localStorage.removeItem("desktop-accent-id-v1");
       localStorage.removeItem("desktop-theme-accent-v1");
       localStorage.removeItem("desktop-wallpaper-v1");
       localStorage.removeItem("desktop-window-positions-v1");
@@ -1124,11 +1125,43 @@
     return box;
   }
 
+  /* Пресеты задают окнам фиксированные места: доли от размера экрана.
+     Старые сохранённые позиции перед этим стираются, иначе плеер может
+     оказаться поверх фото от прошлой раскладки. */
+  function clearPresetWindowState() {
+    try {
+      localStorage.removeItem("desktop-window-positions-v1");
+      localStorage.removeItem("desktop-window-state-v1");
+    } catch (err) {
+      /* хранилище может быть недоступно */
+    }
+  }
+
+  function presetLayout(spec) {
+    if (!window.WindowManager || !window.WindowManager.place) return;
+    if (window.innerWidth <= 768) return;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    Object.keys(spec).forEach(function (id) {
+      const rect = spec[id];
+      if (window.WindowManager.open) window.WindowManager.open(id);
+      window.WindowManager.place(id, {
+        left: Math.round(rect[0] * vw),
+        top: Math.round(rect[1] * vh),
+        width: Math.round(rect[2] * vw),
+        height: Math.round(rect[3] * vh)
+      });
+    });
+  }
+
   /* Блок готовых шаблонов (пресетов) сайта */
   function presetsBlock() {
     const box = el("div", "ed-card");
     box.appendChild(el("div", "ed-card-title", "готовые пресеты сайта"));
     box.appendChild(el("div", "ed-hint", "полностью преобразит тему, стиль, обои и порядок окон сайта в один клик:"));
+    box.appendChild(el("div", "ed-hint ed-preset-warning", "внимание: пресеты — экспериментальная функция. раскладка, обложки и стили могут применяться нестабильно — проверяйте результат перед сохранением сайта."));
 
     const row = el("div", "ed-restore-list");
     row.style.display = "flex";
@@ -1221,6 +1254,10 @@
               window.WindowManager.open("browser");
               window.WindowManager.focus("term");
             }
+            presetLayout({
+              term: [0.04, 0.08, 0.45, 0.62],
+              browser: [0.51, 0.08, 0.44, 0.62]
+            });
           }
         }
       },
@@ -1289,6 +1326,10 @@
               window.WindowManager.open("notes");
               window.WindowManager.focus("pdf");
             }
+            presetLayout({
+              pdf: [0.04, 0.09, 0.45, 0.74],
+              notes: [0.51, 0.09, 0.45, 0.74]
+            });
           }
         }
       },
@@ -1348,6 +1389,10 @@
               window.WindowManager.open("photos");
               window.WindowManager.focus("music");
             }
+            presetLayout({
+              music: [0.04, 0.08, 0.40, 0.64],
+              photos: [0.46, 0.08, 0.49, 0.64]
+            });
           }
         }
       },
@@ -1402,6 +1447,8 @@
         apply: function () {
           draft = normalizeDraft(draftFromData(ORIGINAL));
           try {
+            localStorage.removeItem("desktop-accent-v1");
+            localStorage.removeItem("desktop-accent-id-v1");
             localStorage.removeItem("desktop-theme-accent-v1");
             localStorage.removeItem("desktop-wallpaper-v1");
             localStorage.removeItem("desktop-window-positions-v1");
@@ -1418,11 +1465,12 @@
     presets.forEach(function (p) {
       const btn = el("button", "ed-btn", p.title);
       btn.type = "button";
-      btn.title = p.desc;
+      btn.title = p.desc + " · экспериментальная функция, может работать нестабильно";
       btn.addEventListener("click", function () {
         noticeActive = true;
         let failed = null;
         try {
+          if (p.id !== "default") clearPresetWindowState();
           p.apply();
         } catch (err) {
           failed = err;
@@ -2518,6 +2566,7 @@
         STORE,
         "desktop-settings-v1",
         "desktop-accent-v1",
+        "desktop-accent-id-v1",
         "desktop-theme-accent-v1",
         "desktop-wallpaper-v1",
         "desktop-window-positions-v1",
@@ -2563,7 +2612,7 @@
 
     const glassCard = el("div", "ed-card");
     glassCard.appendChild(el("div", "ed-card-title", "liquid glass"));
-    preview.appendChild(el("div", "ed-hint", "посмотреть предупреждение о тяжёлом стиле ещё раз. согласие помнится до очистки настроек."));
+    glassCard.appendChild(el("div", "ed-hint", "посмотреть предупреждение о тяжёлом стиле ещё раз. согласие помнится до очистки настроек."));
     const glassBtn = el("button", "ed-btn", "показать предупреждение");
     glassBtn.type = "button";
     glassBtn.addEventListener("click", function () {

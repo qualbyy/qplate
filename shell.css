@@ -399,6 +399,32 @@ body.no-dock[data-style="hypr"] .hotkey-hints {
               background 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Разделитель перед конструктором. Есть только в исходнике:
+   в готовом сайте окно конструктора удаляется вместе с ним. */
+.dock-separator {
+  flex: none;
+  align-self: stretch;
+  height: 1px;
+  margin: 2px 0;
+  border-radius: 1px;
+  background: var(--border-dark);
+  opacity: 0.7;
+}
+
+body[data-dockplace="left"] .dock-separator,
+body[data-dockplace="right"] .dock-separator {
+  height: 1px;
+  width: auto;
+  margin: 2px 0;
+}
+
+body[data-dockplace="top"] .dock-separator,
+body[data-dockplace="bottom"] .dock-separator {
+  height: auto;
+  width: 1px;
+  margin: 0 2px;
+}
+
 .dock-app:hover,
 .dock-app:focus-visible {
   transform: scale(1.12) translateX(-3px);

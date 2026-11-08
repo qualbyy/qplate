@@ -1181,6 +1181,13 @@ blockquote {
   filter: hue-rotate(var(--cf-hue, 0deg)) saturate(1.2);
 }
 
+/* Сгенерированная обложка: трек без картинки или битая ссылка. */
+.cf-art.is-generated {
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.3), transparent 55%),
+    linear-gradient(135deg, rgb(var(--cf-a)) 0%, rgb(var(--cf-b)) 100%);
+}
+
 .cf-item.is-active .cf-art,
 .cf-item:hover .cf-art {
   border-color: rgba(var(--cf-a), 0.88);
@@ -1264,6 +1271,13 @@ blockquote {
 
 .music-cover.is-missing {
   opacity: 0;
+}
+
+/* Трек без своей обложки получает сгенерированную градиентную. */
+.music-cover.is-generated {
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.3), transparent 55%),
+    linear-gradient(135deg, rgb(var(--cf-a)) 0%, rgb(var(--cf-b)) 100%);
 }
 
 /* Картинки подстраиваются под ключевой цвет. */

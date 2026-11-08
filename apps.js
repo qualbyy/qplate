@@ -1246,6 +1246,8 @@
     }
 
     const items = [];
+    const AUTO_A = [[96, 150, 196], [104, 168, 116], [156, 122, 196], [200, 132, 96]];
+    const AUTO_B = [[52, 92, 132], [58, 108, 72], [96, 68, 130], [130, 74, 48]];
 
     const coverflow = make("div", "music-coverflow");
     const stage = make("div", "music-coverflow-stage");
@@ -1263,24 +1265,27 @@
       art.crossOrigin = "anonymous";
       if (auto) {
         item.classList.add("cf-auto");
+        art.classList.add("is-generated");
         item.style.setProperty("--cf-hue", [152, 82, 230, -24][autoIndex] + "deg");
-        item.style.setProperty("--cf-a", [[96, 150, 196], [104, 168, 116], [156, 122, 196], [200, 132, 96]][autoIndex].join(", "));
-        item.style.setProperty("--cf-b", [[52, 92, 132], [58, 108, 72], [96, 68, 130], [130, 74, 48]][autoIndex].join(", "));
+        item.style.setProperty("--cf-a", AUTO_A[autoIndex].join(", "));
+        item.style.setProperty("--cf-b", AUTO_B[autoIndex].join(", "));
       } else {
         art.addEventListener("load", function () {
           paintCoverColors(item, art);
         });
+        art.src = track.cover || "";
+        if (art.complete && art.naturalWidth) paintCoverColors(item, art);
+        if (art.decode) {
+          art.decode().then(function () {
+            paintCoverColors(item, art);
+          }).catch(function () {});
+        }
       }
       art.addEventListener("error", function () {
-        art.classList.add("is-missing");
+        art.classList.remove("is-missing");
+        art.classList.add("is-generated");
+        art.removeAttribute("src");
       });
-      art.src = track.cover || "";
-      if (!auto && art.complete && art.naturalWidth) paintCoverColors(item, art);
-      if (!auto && art.decode) {
-        art.decode().then(function () {
-          paintCoverColors(item, art);
-        }).catch(function () {});
-      }
 
       const name = make("span", "cf-name", track.title || "без названия");
       item.appendChild(art);
@@ -1314,13 +1319,15 @@
 
     const cover = make("img", "music-cover");
     cover.crossOrigin = "anonymous";
-    cover.src = (tracks[0] && tracks[0].cover) || "";
+    if (tracks[0] && tracks[0].cover) cover.src = tracks[0].cover;
     cover.alt = (tracks[0] && tracks[0].title) || "обложка трека";
     cover.addEventListener("load", function () {
       paintCoverColors(single, cover);
     });
     cover.addEventListener("error", function () {
-      cover.classList.add("is-missing");
+      cover.classList.remove("is-missing");
+      cover.classList.add("is-generated");
+      cover.removeAttribute("src");
     });
 
     const meta = make("div", "music-meta");
@@ -1444,7 +1451,18 @@
 
       trackTitle.textContent = track.title || "без названия";
       trackArtist.textContent = track.artist || "неизвестный исполнитель";
-      cover.src = track.cover || "";
+      cover.classList.remove("is-missing");
+      if (track.cover) {
+        cover.src = track.cover;
+      } else {
+        cover.removeAttribute("src");
+      }
+      cover.classList.toggle("is-generated", !track.cover);
+      if (!track.cover) {
+        const palette = current % 4;
+        single.style.setProperty("--cf-a", AUTO_A[palette].join(", "));
+        single.style.setProperty("--cf-b", AUTO_B[palette].join(", "));
+      }
       cover.alt = (track.title || "трек") + " — " + (track.artist || "");
       if (cover.complete && cover.naturalWidth) {
         paintCoverColors(single, cover);
@@ -1693,11 +1711,18 @@
       block.appendChild(make("div", "setting-hint", "меняет акценты и фоны по всему сайту."));
 
       const swatches = make("div", "theme-swatches");
+      let picker = null;
+      let customSwatch = null;
 
       function mark() {
+        const current = ctx.getTheme();
+        const activeId = current.accent || "custom";
         swatches.querySelectorAll(".swatch").forEach(function (b) {
-          b.classList.toggle("is-active", b.dataset.id === ctx.getTheme().accent);
+          b.classList.toggle("is-active", b.dataset.id === activeId);
         });
+        if (customSwatch) {
+          customSwatch.style.background = current.accent ? "" : current.color;
+        }
       }
 
       const lockedColors = Array.isArray(theme.locked) ? theme.locked : [];
@@ -1712,7 +1737,7 @@
         sw.setAttribute("aria-label", preset.label || preset.id);
         sw.addEventListener("click", function () {
           ctx.applySetting("accent", preset.id);
-          picker.value = preset.color;
+          if (picker) picker.value = preset.color;
           mark();
         });
         swatches.appendChild(sw);
@@ -1722,7 +1747,7 @@
         const custom = make("label", "swatch custom");
         custom.dataset.id = "custom";
         custom.title = "свой цвет";
-        const picker = make("input", "swatch-picker");
+        picker = make("input", "swatch-picker");
         picker.type = "color";
         picker.value = ctx.getTheme().color;
         picker.setAttribute("aria-label", "свой ключевой цвет");
@@ -1732,6 +1757,7 @@
           mark();
         });
         custom.appendChild(picker);
+        customSwatch = custom;
 
         swatches.appendChild(custom);
       }
@@ -1955,6 +1981,7 @@
       [
         "desktop-settings-v1",
         "desktop-accent-v1",
+        "desktop-accent-id-v1",
         "desktop-theme-accent-v1",
         "desktop-wallpaper-v1",
         "desktop-project-v1",
@@ -1973,7 +2000,7 @@
     app.appendChild(reset);
 
     const watermark = make("div", "settings-watermark");
-    watermark.innerHTML = 'конструктор разработан <a href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a> · 1.2.1';
+    watermark.innerHTML = 'конструктор разработан <a href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a> · 1.2.4';
     app.appendChild(watermark);
 
     body.appendChild(app);

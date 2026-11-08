@@ -18,6 +18,7 @@
   const renderers = window.APP_RENDERERS || {};
   const settingsKey = "desktop-settings-v1";
   const themeKey = "desktop-accent-v1";
+  const accentIdKey = "desktop-accent-id-v1";
   const positionKey = "desktop-window-positions-v1";
   const stateKey = "desktop-window-state-v1";
   const wallpaperKey = "desktop-wallpaper-v1";
@@ -415,11 +416,50 @@
     const meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.setAttribute("content", dark ? "dark" : "light");
 
+    saveThemeState();
+  }
+
+  /* Цвет и id выбранного пресета храним отдельно: по id палитра
+     понимает, какой кружок подсветить, а по цвету восстанавливает
+     сам оттенок после перезагрузки. */
+  function saveThemeState() {
     try {
       localStorage.setItem(themeKey, themeState.color);
+      localStorage.setItem(accentIdKey, themeState.accent);
     } catch (err) {
       /* ничего */
     }
+  }
+
+  /* Возвращает выбранный пользователем цвет после перезагрузки.
+     Раньше значение по умолчанию из data.js («white») всегда
+     перебивало сохранённый цвет. */
+  function restoreTheme() {
+    const theme = DATA.theme || {};
+    const presets = theme.presets || [];
+    let color = "";
+    let id = null;
+    try {
+      color = localStorage.getItem(themeKey) || "";
+      id = localStorage.getItem(accentIdKey);
+    } catch (err) {
+      color = "";
+      id = null;
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+      let preset = id ? presets.filter(function (item) { return item.id === id; })[0] : null;
+      if (!preset) {
+        preset = presets.filter(function (item) {
+          return String(item.color || "").toLowerCase() === color.toLowerCase();
+        })[0];
+      }
+      themeState.accent = preset ? preset.id : "";
+      themeState.color = preset ? preset.color : color;
+      return;
+    }
+
+    themeColor(theme.accent);
   }
 
   /* ---------- Обои ---------- */
@@ -937,7 +977,31 @@
   }
 
   function buildDock() {
-    DATA.windows.forEach(createDockButton);
+    Array.from(dockButtons.values()).forEach(function (btn) {
+      btn.remove();
+    });
+    dockButtons.clear();
+
+    const apps = [];
+    let editorCfg = null;
+    DATA.windows.forEach(function (cfg) {
+      if (cfg.type === "editor") editorCfg = cfg;
+      else apps.push(cfg);
+    });
+
+    apps.forEach(createDockButton);
+
+    /* Конструктор всегда последний в доке: снизу в вертикальном,
+       справа в горизонтальном. Разделитель существует только пока
+       на сайте есть окно конструктора, поэтому в экспорте его нет. */
+    if (editorCfg) {
+      const sep = document.createElement("div");
+      sep.className = "dock-separator";
+      sep.id = "dock-editor-separator";
+      sep.setAttribute("aria-hidden", "true");
+      dock.appendChild(sep);
+      createDockButton(editorCfg);
+    }
   }
 
   function removeWindow(id) {
@@ -997,9 +1061,7 @@
         || current === themeDefault
         || (!themeState.accent && String(themeState.color).toLowerCase() === String(themeDefault).toLowerCase());
       if (untouched) themeColor(nextDefault);
-      try {
-        localStorage.setItem(themeKey, themeState.color);
-      } catch (e) {}
+      saveThemeState();
       themeDefault = nextDefault;
     }
 
@@ -1024,8 +1086,9 @@
       } else {
         buildWindow(cfg);
       }
-      createDockButton(cfg);
     });
+
+    buildDock();
 
     document.body.classList.toggle("is-kiosk", isKiosk());
     buildHotkeyHints();
@@ -1302,6 +1365,33 @@
     }
   }
 
+  /* Ставит окно в конкретное место. Нужен пресетам конструктора:
+     у них фиксированная раскладка, а не каскад по центру. */
+  function placeWindow(id, rect) {
+    const win = windows.get(id);
+    if (!win || !rect || isMobile()) return;
+
+    win.classList.remove("is-maximized");
+
+    if (rect.width) {
+      win.style.width = Math.max(280, Math.round(rect.width)) + "px";
+      win.dataset.sized = "1";
+    }
+    if (rect.height) {
+      win.style.height = Math.max(180, Math.round(rect.height)) + "px";
+      win.dataset.sized = "1";
+    }
+
+    const ins = dockInsets();
+    const maxLeft = Math.max(ins.left, window.innerWidth - win.offsetWidth - ins.right);
+    const maxTop = Math.max(ins.top, window.innerHeight - win.offsetHeight - ins.bottom);
+
+    win.style.left = Math.min(Math.max(ins.left, Math.round(rect.left || ins.left)), maxLeft) + "px";
+    win.style.top = Math.min(Math.max(ins.top, Math.round(rect.top || ins.top)), maxTop) + "px";
+    win.dataset.positioned = "1";
+    savePosition(id);
+  }
+
   function positionNew(id) {
     if (isMobile()) return;
 
@@ -1553,6 +1643,7 @@
     minimize: minimizeWindow,
     toggle: toggleWindow,
     center: centerAndMark,
+    place: placeWindow,
     focus: focusWindow,
     sync: sync,
     applySetting: applySetting,
@@ -1697,7 +1788,7 @@
       if (item && item.id && item.value !== undefined) settingsDefaults[item.id] = item.value;
     });
     themeDefault = (DATA.theme && DATA.theme.accent) || "";
-    themeColor(DATA.theme && DATA.theme.accent);
+    restoreTheme();
     applySettings();
     applyTheme();
     buildClock();

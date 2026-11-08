@@ -402,6 +402,15 @@
   line-height: 1.4;
 }
 
+.ed-preset-warning {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-left: 2px solid var(--sand-accent);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 4px;
+}
+
 .ed-preview-img {
   display: block;
   width: 100%;
