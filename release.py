@@ -22,7 +22,7 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 APPS = ROOT / "apps.js"
 
 ENTRY_RE = re.compile(r"^## (\d{4})\.(\d{2})\.(\d{2})\.(\d+)\b", re.M)
-WATERMARK_RE = re.compile(r"settings-watermark\"\)[\s\S]*?· (\d{4}\.\d{2}\.\d{2}\.\d+)")
+WATERMARK_RE = re.compile(r"settings-watermark\"\)[\s\S]*?· (?:сборка )?(\d{4}\.\d{2}\.\d{2}\.\d+)")
 
 
 def moscow_today():
