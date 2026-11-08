@@ -169,17 +169,17 @@ return {
 ```
 git clone https://github.com/qualbyy/qplate.git
 cd qplate
-python3 -m http.server 8000
+python3 -m http.server 6767
 ```
 
 Если папка уже есть, хватит двух строк:
 
 ```
 cd ~/qplate
-python3 -m http.server 8000
+python3 -m http.server 6767
 ```
 
-Открыть `http://localhost:8000`. Двойной клик по `index.html` тоже работает, но сборка сайта и сохранение `site.zip` читают файлы по сети, поэтому для них нужен сервер.
+Открыть `http://localhost:6767`. Двойной клик по `index.html` тоже работает, но сборка сайта и сохранение `site.zip` читают файлы по сети, поэтому для них нужен сервер.
 
 ## что упрощено намеренно
 

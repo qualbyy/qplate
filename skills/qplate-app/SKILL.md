@@ -88,4 +88,4 @@ return {
 - экспорт сайта сохраняет новое окно;
 - в консоли нет ошибок.
 
-Запуск: `python3 -m http.server 8000`, открыть `http://localhost:8000`.
+Запуск: `python3 -m http.server 6767`, открыть `http://localhost:6767`.
