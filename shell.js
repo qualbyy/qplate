@@ -1033,12 +1033,19 @@
     }
   }
 
-  function sync() {
+  function sync(force) {
     const nextDefaults = {};
 
     (DATA.settings || []).forEach(function (s) {
       if (!s || !s.id || s.value === undefined) return;
       nextDefaults[s.id] = s.value;
+
+      /* Пресет в конструкторе — явная команда: его значения важнее
+         сохранённого пользовательского выбора. */
+      if (force) {
+        settingsState[s.id] = s.value;
+        return;
+      }
 
       if (settingsState[s.id] === undefined) {
         settingsState[s.id] = s.value;
@@ -1060,7 +1067,7 @@
       const untouched = !themeState.color
         || current === themeDefault
         || (!themeState.accent && String(themeState.color).toLowerCase() === String(themeDefault).toLowerCase());
-      if (untouched) themeColor(nextDefault);
+      if (force || untouched) themeColor(nextDefault);
       saveThemeState();
       themeDefault = nextDefault;
     }

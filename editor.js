@@ -349,8 +349,8 @@
     DATA.theme = Object.assign({}, DATA.theme, draft.theme);
   }
 
-  function applyDraft() {
-    if (glassSelected() && !isGlassLive() && !glassWarned) {
+  function applyDraft(force) {
+    if (!force && glassSelected() && !isGlassLive() && !glassWarned) {
       const previous = currentStyleValue();
       /* «Сохранить сайт» сперва зовёт commit(): отказ возвращает прежний стиль. */
       revertGlass = function () {
@@ -371,7 +371,7 @@
 
     commit();
     saveDraft();
-    if (window.WindowManager && WindowManager.sync) WindowManager.sync();
+    if (window.WindowManager && WindowManager.sync) WindowManager.sync(force);
     setStatus("применено: сайт обновился", "ok");
     return Promise.resolve(true);
   }
@@ -1140,6 +1140,9 @@
   function presetLayout(spec) {
     if (!window.WindowManager || !window.WindowManager.place) return;
     if (window.innerWidth <= 768) return;
+    /* В hypr окна раскладывает сама тема (tiling), ручные прямоугольники
+       только ломают её сетку до перезагрузки. */
+    if (document.body.dataset.style === "hypr") return;
 
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -1240,7 +1243,7 @@
             })()
           ];
 
-          applyDraft();
+          applyDraft(true);
           if (window.WindowManager) {
             if (window.WindowManager.close) {
               DATA.windows.forEach(function (w) {
@@ -1312,7 +1315,7 @@
           ];
           draft.notes[0].date = today();
 
-          applyDraft();
+          applyDraft(true);
           if (window.WindowManager) {
             if (window.WindowManager.close) {
               DATA.windows.forEach(function (w) {
@@ -1375,7 +1378,7 @@
           ];
           draft.notes[0].date = today();
 
-          applyDraft();
+          applyDraft(true);
           if (window.WindowManager) {
             if (window.WindowManager.close) {
               DATA.windows.forEach(function (w) {
@@ -1424,7 +1427,7 @@
           ];
           draft.notes[0].date = today();
 
-          applyDraft();
+          applyDraft(true);
           if (window.WindowManager) {
             if (window.WindowManager.close) {
               DATA.windows.forEach(function (w) {
@@ -1456,7 +1459,7 @@
           } catch (err) {
             /* хранилище может быть недоступно */
           }
-          applyDraft();
+          applyDraft(true);
           restoreDefaultLayout();
         }
       }
@@ -3210,7 +3213,9 @@
 
     const apply = el("button", "ed-btn ed-btn-main", "применить");
     apply.type = "button";
-    apply.addEventListener("click", applyDraft);
+    apply.addEventListener("click", function () {
+      applyDraft();
+    });
 
     const saveMenu = el("details", "ed-save-menu");
     const saveToggle = el("summary", "ed-btn ed-btn-save", "сохранить сайт");
