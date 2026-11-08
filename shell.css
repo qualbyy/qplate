@@ -813,7 +813,7 @@ body.clock-pos-bl .desktop-clock { left: 18px; right: auto; bottom: 18px; top: a
 body.clock-pos-bc .desktop-clock { left: 50%; right: auto; bottom: 18px; top: auto; transform: translateX(-50%); align-items: center; }
 body.clock-pos-br .desktop-clock { right: 18px; left: auto; bottom: 18px; top: auto; }
 body.clock-pos-center .desktop-clock { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); align-items: center; }
-body.clock-pos-custom .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; transform: none; align-items: flex-start; z-index: 6; }
+body.clock-pos-custom .desktop-clock { left: 18px; right: auto; top: 14px; bottom: auto; transform: none; align-items: flex-start; z-index: 0; }
 
 /* Размер часов */
 body.clock-size-s .clock-time { font-size: 15px; }

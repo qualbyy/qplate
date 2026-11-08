@@ -2000,7 +2000,7 @@
     app.appendChild(reset);
 
     const watermark = make("div", "settings-watermark");
-    watermark.innerHTML = 'конструктор разработан <a href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a> · 2026.11.08.4';
+    watermark.innerHTML = 'конструктор разработан <a href="https://qualbyy.github.io" target="_blank" rel="noopener">qualbyy</a> · 2026.11.08.7';
     app.appendChild(watermark);
 
     body.appendChild(app);
