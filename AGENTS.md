@@ -48,7 +48,7 @@
 - `terminal.paths` — команды: `{ label, desc, action, ... }`,
   `action`: `text` | `open` | `link` | `code`.
 - `photos` — `{ src, title, note }`.
-- `music` — `{ cover, album, tracks: [{ title, artist, seconds }] }`.
+- `music` — `{ note?, tracks: [{ title, artist, seconds, cover?, src? }] }`.
 - `files` — дерево файлового окна:
   `{ name, type: "file", kind, src?, content? }`.
   `kind`: `text` | `image` | `audio` | `pdf` | `unknown`.

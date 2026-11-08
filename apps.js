@@ -1258,7 +1258,7 @@
       const auto = !track.cover;
       const autoIndex = index % 4;
       const art = make("img", "cf-art");
-      if (data.coverMode === "accent") art.classList.add("is-accent");
+      if (track.coverMode === "accent") art.classList.add("is-accent");
       art.alt = "";
       art.crossOrigin = "anonymous";
       if (auto) {
@@ -1274,7 +1274,7 @@
       art.addEventListener("error", function () {
         art.classList.add("is-missing");
       });
-      art.src = track.cover || data.cover || "";
+      art.src = track.cover || "";
       if (!auto && art.complete && art.naturalWidth) paintCoverColors(item, art);
       if (!auto && art.decode) {
         art.decode().then(function () {
@@ -1313,9 +1313,12 @@
     single.appendChild(back);
 
     const cover = make("img", "music-cover");
-    if (data.coverMode === "accent") cover.classList.add("is-accent");
-    cover.src = data.cover || "";
-    cover.alt = "обложка альбома";
+    cover.crossOrigin = "anonymous";
+    cover.src = (tracks[0] && tracks[0].cover) || "";
+    cover.alt = (tracks[0] && tracks[0].title) || "обложка трека";
+    cover.addEventListener("load", function () {
+      paintCoverColors(single, cover);
+    });
     cover.addEventListener("error", function () {
       cover.classList.add("is-missing");
     });
@@ -1440,8 +1443,12 @@
       const percent = Math.min(1000, Math.round((elapsed / duration) * 1000));
 
       trackTitle.textContent = track.title || "без названия";
-      trackArtist.textContent = (track.artist || "неизвестный исполнитель") + " • " + (data.album || "");
-      cover.src = track.cover || data.cover || "";
+      trackArtist.textContent = track.artist || "неизвестный исполнитель";
+      cover.src = track.cover || "";
+      cover.alt = (track.title || "трек") + " — " + (track.artist || "");
+      if (cover.complete && cover.naturalWidth) {
+        paintCoverColors(single, cover);
+      }
       range.value = String(percent);
       range.setAttribute("aria-valuetext", formatTime(elapsed) + " из " + formatTime(duration));
       elapsedText.textContent = formatTime(elapsed);

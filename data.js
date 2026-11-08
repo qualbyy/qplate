@@ -242,9 +242,6 @@ window.DATA = {
   ],
 
   music: {
-    cover: "assets/cover.svg",
-    coverMode: "photo",
-    album: "демо-альбом",
     note: "звука нет — только визуальный прогресс.",
     tracks: [
       { title: "первый трек", artist: "you", seconds: 187, cover: "assets/cover-1.svg" },

@@ -1240,24 +1240,35 @@ blockquote {
   }
 }
 
+.music-card {
+  --cf-a: var(--accent-rgb);
+  --cf-b: var(--accent-rgb);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  animation: musicCardIn 0.3s ease both;
+}
+
 .music-cover {
   width: min(100%, 220px);
   aspect-ratio: 1;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+  border-radius: 10px;
+  border: 1px solid rgba(var(--cf-a), 0.45);
   background: var(--surface-mute);
   object-fit: cover;
-  box-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.14);
+  box-shadow: 0 12px 30px rgba(var(--cf-a), 0.35);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .music-cover.is-missing {
   opacity: 0;
 }
 
-/* Картинки и обложка подстраиваются под ключевой цвет. */
+/* Картинки подстраиваются под ключевой цвет. */
 .photo-tile img,
-.lightbox-card img,
-.music-cover {
+.lightbox-card img {
   filter: grayscale(1) sepia(0.55) saturate(1.8) hue-rotate(calc(var(--accent-hue, 35) * 1deg - 35deg));
 }
 

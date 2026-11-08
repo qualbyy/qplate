@@ -261,10 +261,7 @@
         root: { name: "~", type: "folder", children: [] }
       }),
       music: {
-        cover: (s.music && s.music.cover) || "",
-        coverMode: (s.music && s.music.coverMode) || "photo",
         note: (s.music && s.music.note) || "",
-        album: (s.music && s.music.album) || "",
         tracks: clone((s.music && Array.isArray(s.music.tracks)) ? s.music.tracks : [])
       }
     };
@@ -1320,7 +1317,6 @@
             return 0;
           });
 
-          draft.music.album = "midnight session (ep)";
           draft.music.note = "слушайте на всех стриминговых платформах";
           draft.music.tracks = [
             { title: "01. midnight rain", artist: "soundwave", seconds: 194 },
@@ -1790,29 +1786,6 @@
     const wrap = el("div", "ed-card");
     wrap.appendChild(el("div", "ed-card-title", "музыка"));
 
-    wrap.appendChild(field("название альбома", draft.music.album, function (value) {
-      draft.music.album = value;
-    }));
-
-    wrap.appendChild(selectField("обложка", draft.music.coverMode || "photo", [
-      ["photo", "как на фото"],
-      ["accent", "ключевым цветом"]
-    ], function (value) {
-      draft.music.coverMode = value;
-    }));
-
-    wrap.appendChild(field("картинка обложки", draft.music.cover, function (value) {
-      draft.music.cover = value;
-    }, {
-      hint: "адрес картинки, файл в assets или выбрать с устройства",
-      pick: {
-        accept: "image/*",
-        apply: function (value) {
-          draft.music.cover = value;
-        }
-      }
-    }));
-
     wrap.appendChild(field("подпись внизу", draft.music.note, function (value) {
       draft.music.note = value;
     }, {
@@ -1843,6 +1816,18 @@
         track.artist = value;
       }));
 
+      card.appendChild(field("обложка трека", track.cover || "", function (value) {
+        track.cover = value;
+      }, {
+        hint: "адрес картинки, файл в assets или выбрать с устройства",
+        pick: {
+          accept: "image/*",
+          apply: function (value) {
+            track.cover = value;
+          }
+        }
+      }));
+
       card.appendChild(field("длительность, секунд", String(track.seconds || 0), function (value) {
         track.seconds = Math.max(1, parseInt(value, 10) || 1);
       }));
@@ -1870,7 +1855,7 @@
     const add = el("button", "ed-add", "+ трек");
     add.type = "button";
     add.addEventListener("click", function () {
-      draft.music.tracks.push({ title: "новый трек", artist: draft.meta.user || "you", seconds: 180 });
+      draft.music.tracks.push({ title: "новый трек", artist: draft.meta.user || "you", seconds: 180, cover: "" });
       queueSave();
       renderPanel();
     });
