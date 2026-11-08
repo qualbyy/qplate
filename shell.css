@@ -437,6 +437,23 @@ body[data-dockplace="bottom"] .dock-separator {
   border-color: var(--sand-accent);
 }
 
+/* Растём наружу от края, к которому прижат док:
+   слева — вправо, справа — влево, сверху — вниз, снизу — вверх. */
+body[data-dockplace="left"] .dock-app:hover,
+body[data-dockplace="left"] .dock-app:focus-visible {
+  transform: scale(1.12) translateX(3px);
+}
+
+body[data-dockplace="top"] .dock-app:hover,
+body[data-dockplace="top"] .dock-app:focus-visible {
+  transform: scale(1.12) translateY(3px);
+}
+
+body[data-dockplace="bottom"] .dock-app:hover,
+body[data-dockplace="bottom"] .dock-app:focus-visible {
+  transform: scale(1.12) translateY(-3px);
+}
+
 .dock-app-icon {
   display: flex;
   align-items: center;
