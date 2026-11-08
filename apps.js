@@ -31,23 +31,122 @@
     };
   }
 
+  function hslToRgb(h, s, l) {
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const hue2rgb = function (p, q, t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      r = hue2rgb(p, q, h / 360 + 1 / 3);
+      g = hue2rgb(p, q, h / 360);
+      b = hue2rgb(p, q, h / 360 - 1 / 3);
+    }
+    return {
+      r: Math.round(r * 255),
+      g: Math.round(g * 255),
+      b: Math.round(b * 255)
+    };
+  }
+
+  function parseHexColor(hex) {
+    if (!hex || typeof hex !== "string") return null;
+    hex = hex.trim().replace(/^#/, "");
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length >= 6) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) {
+        return { r, g, b };
+      }
+    }
+    return null;
+  }
+
+  function parseColorsFromSvg(svgText) {
+    if (!svgText || typeof svgText !== "string") return null;
+    const matches = svgText.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g);
+    if (!matches || !matches.length) return null;
+    const colors = [];
+    for (let i = 0; i < matches.length; i++) {
+      const c = parseHexColor(matches[i]);
+      if (!c) continue;
+      const max = Math.max(c.r, c.g, c.b);
+      const min = Math.min(c.r, c.g, c.b);
+      if (max < 15 || min > 240) continue;
+      colors.push(c);
+    }
+    if (!colors.length) return null;
+    const first = colors[0];
+    let second = null;
+    for (let i = 1; i < colors.length; i++) {
+      const c = colors[i];
+      if (Math.abs(c.r - first.r) + Math.abs(c.g - first.g) + Math.abs(c.b - first.b) > 40) {
+        second = c;
+        break;
+      }
+    }
+    return [first, second || darkenColor(first)];
+  }
+
+  function hashColorFallback(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const hue = Math.abs(hash) % 360;
+    return [hslToRgb(hue, 0.65, 0.5), hslToRgb((hue + 32) % 360, 0.72, 0.36)];
+  }
+
+  function applyColorsToItem(item, colors) {
+    if (!item || !colors || !colors[0]) return;
+    item.style.setProperty("--cf-a", colors[0].r + ", " + colors[0].g + ", " + colors[0].b);
+    item.style.setProperty("--cf-b", (colors[1] ? colors[1].r + ", " + colors[1].g + ", " + colors[1].b : colors[0].r + ", " + colors[0].g + ", " + colors[0].b));
+  }
+
   function coverColors(img) {
+    const src = img.currentSrc || img.getAttribute("src") || img.src || "";
+    if (src.startsWith("data:image/svg+xml")) {
+      try {
+        const comma = src.indexOf(",");
+        if (comma > -1) {
+          const raw = src.slice(comma + 1);
+          const decoded = src.includes(";base64,") ? atob(raw) : decodeURIComponent(raw);
+          const svgColors = parseColorsFromSvg(decoded);
+          if (svgColors) return svgColors;
+        }
+      } catch (e) {}
+    }
+
     try {
-      const size = 24;
+      const size = 32;
       const canvas = document.createElement("canvas");
       canvas.width = size;
       canvas.height = size;
 
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return null;
+      if (!ctx) throw new Error("no 2d ctx");
 
       ctx.drawImage(img, 0, 0, size, size);
       const pixels = ctx.getImageData(0, 0, size, size).data;
       const buckets = new Map();
       const total = { r: 0, g: 0, b: 0, w: 0 };
+      let anyColor = null;
 
       for (let i = 0; i < pixels.length; i += 4) {
-        if (pixels[i + 3] < 140) continue;
+        if (pixels[i + 3] < 60) continue;
 
         const r = pixels[i];
         const g = pixels[i + 1];
@@ -56,7 +155,11 @@
         const min = Math.min(r, g, b);
         const light = (max + min) / 2;
 
-        if (light < 18 || light > 244) continue;
+        if (!anyColor && (r > 12 || g > 12 || b > 12)) {
+          anyColor = { r, g, b };
+        }
+
+        if (light < 14 || light > 246) continue;
 
         total.r += r;
         total.g += g;
@@ -90,45 +193,69 @@
       });
       list.sort(function (a, b) { return b.w - a.w; });
 
-      if (!list.length) {
-        if (!total.w) return null;
-        const gray = {
+      if (list.length) {
+        const first = list[0];
+        let second = null;
+        for (let i = 1; i < list.length; i++) {
+          const c = list[i];
+          if (Math.abs(c.r - first.r) + Math.abs(c.g - first.g) + Math.abs(c.b - first.b) > 40) {
+            second = c;
+            break;
+          }
+        }
+        return [first, second || darkenColor(first)];
+      }
+
+      if (total.w > 0) {
+        const avg = {
           r: Math.round(total.r / total.w),
           g: Math.round(total.g / total.w),
           b: Math.round(total.b / total.w)
         };
-        return [gray, darkenColor(gray)];
+        return [avg, darkenColor(avg)];
       }
 
-      const first = list[0];
-      let second = null;
-      for (let i = 1; i < list.length; i++) {
-        const c = list[i];
-        if (Math.abs(c.r - first.r) + Math.abs(c.g - first.g) + Math.abs(c.b - first.b) > 80) {
-          second = c;
-          break;
-        }
+      if (anyColor) {
+        return [anyColor, darkenColor(anyColor)];
       }
-
-      return [first, second || darkenColor(first)];
     } catch (err) {
-      return null;
+      // canvas failed (tainted, CORS, or missing dimensions)
     }
+
+    if (src && (src.endsWith(".svg") || src.includes(".svg?"))) {
+      try {
+        fetch(src).then(function (res) {
+          if (!res.ok) return;
+          return res.text();
+        }).then(function (svgText) {
+          if (!svgText) return;
+          const svgColors = parseColorsFromSvg(svgText);
+          if (svgColors) {
+            coverColorCache.set(src, svgColors);
+            if (img.isConnected && img.closest) {
+              const item = img.closest(".cf-item");
+              if (item) applyColorsToItem(item, svgColors);
+            }
+          }
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    return hashColorFallback(src || "music");
   }
 
   function paintCoverColors(item, art) {
-    const src = art.currentSrc || art.getAttribute("src") || "";
+    const src = art.currentSrc || art.getAttribute("src") || art.src || "";
     if (!src) return;
 
     let colors = coverColorCache.get(src);
-    if (colors === undefined) {
+    if (!colors) {
       colors = coverColors(art);
-      coverColorCache.set(src, colors);
+      if (colors) coverColorCache.set(src, colors);
     }
-    if (!colors) return;
-
-    item.style.setProperty("--cf-a", colors[0].r + ", " + colors[0].g + ", " + colors[0].b);
-    item.style.setProperty("--cf-b", colors[1].r + ", " + colors[1].g + ", " + colors[1].b);
+    if (colors) {
+      applyColorsToItem(item, colors);
+    }
   }
 
   function make(tag, className, text) {
@@ -1133,6 +1260,7 @@
       const art = make("img", "cf-art");
       if (data.coverMode === "accent") art.classList.add("is-accent");
       art.alt = "";
+      art.crossOrigin = "anonymous";
       if (auto) {
         item.classList.add("cf-auto");
         item.style.setProperty("--cf-hue", [152, 82, 230, -24][autoIndex] + "deg");
@@ -1148,14 +1276,22 @@
       });
       art.src = track.cover || data.cover || "";
       if (!auto && art.complete && art.naturalWidth) paintCoverColors(item, art);
+      if (!auto && art.decode) {
+        art.decode().then(function () {
+          paintCoverColors(item, art);
+        }).catch(function () {});
+      }
 
       const name = make("span", "cf-name", track.title || "без названия");
       item.appendChild(art);
       item.appendChild(name);
 
       item.addEventListener("click", function () {
-        selectTrack(index, false);
-        showSingle(true);
+        if (index !== current) {
+          selectTrack(index, false);
+        } else {
+          showSingle(true);
+        }
       });
 
       items.push(item);
@@ -1243,14 +1379,46 @@
     let timer = null;
     let lastTick = 0;
 
+    function getOffsetLeftInStage(el) {
+      let x = 0;
+      let node = el;
+      while (node && node !== stage) {
+        x += node.offsetLeft;
+        node = node.offsetParent;
+      }
+      return x;
+    }
+
+    function centerActive(smooth) {
+      const active = items[current];
+      if (!active || !stage) return;
+      const stageWidth = stage.clientWidth;
+      if (!stageWidth) return;
+      const targetLeft = getOffsetLeftInStage(active) - (stageWidth - active.offsetWidth) / 2;
+      stage.scrollTo({
+        left: Math.max(0, Math.round(targetLeft)),
+        behavior: smooth && motionOn() ? "smooth" : "auto"
+      });
+    }
+
+    function updateCoverflowSize() {
+      if (!coverflow || !coverflow.isConnected) return;
+      const w = coverflow.clientWidth || app.clientWidth || 400;
+      const h = coverflow.clientHeight || app.clientHeight || 300;
+      const target = Math.min(Math.floor(w * 0.38), Math.floor(h * 0.52));
+      const size = Math.max(120, Math.min(260, target || 140));
+      coverflow.style.setProperty("--cf-size", size + "px");
+      centerActive(false);
+    }
+
     function showSingle(on) {
       app.classList.toggle("is-single", on);
 
       if (!on) {
-        const active = items[current];
-        if (active && active.scrollIntoView) {
-          active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-        }
+        requestAnimationFrame(function () {
+          updateCoverflowSize();
+          centerActive(false);
+        });
       }
     }
 
@@ -1273,6 +1441,7 @@
 
       trackTitle.textContent = track.title || "без названия";
       trackArtist.textContent = (track.artist || "неизвестный исполнитель") + " • " + (data.album || "");
+      cover.src = track.cover || data.cover || "";
       range.value = String(percent);
       range.setAttribute("aria-valuetext", formatTime(elapsed) + " из " + formatTime(duration));
       elapsedText.textContent = formatTime(elapsed);
@@ -1282,6 +1451,8 @@
 
       items.forEach(function (item, index) {
         item.classList.toggle("is-active", index === current);
+        item.classList.toggle("is-before", index < current);
+        item.classList.toggle("is-after", index > current);
       });
     }
 
@@ -1349,6 +1520,7 @@
       }
 
       paint();
+      centerActive(true);
 
       if (autoplay) {
         playing = true;
@@ -1407,6 +1579,28 @@
       paint();
     });
 
+    let scrollTimeout = null;
+    stage.addEventListener("scroll", function () {
+      if (app.classList.contains("is-single")) return;
+      window.clearTimeout(scrollTimeout);
+      scrollTimeout = window.setTimeout(function () {
+        const stageCenter = stage.scrollLeft + stage.clientWidth / 2;
+        let bestIndex = current;
+        let minDiff = Infinity;
+        items.forEach(function (it, idx) {
+          const itCenter = getOffsetLeftInStage(it) + it.offsetWidth / 2;
+          const diff = Math.abs(itCenter - stageCenter);
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestIndex = idx;
+          }
+        });
+        if (bestIndex !== current) {
+          selectTrack(bestIndex, false);
+        }
+      }, 70);
+    }, { passive: true });
+
     function onMusicKey(e) {
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
       if (app.classList.contains("is-single") || !app.isConnected) return;
@@ -1427,21 +1621,39 @@
 
       e.preventDefault();
       selectTrack(current + step, false);
-      if (items[current] && items[current].scrollIntoView) {
-        items[current].scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
-      }
     }
 
     document.addEventListener("keydown", onMusicKey);
 
-    paint();
-
-    if (items[current] && items[current].scrollIntoView) {
-      items[current].scrollIntoView({ inline: "center", block: "nearest" });
+    let ro = null;
+    if (window.ResizeObserver) {
+      ro = new ResizeObserver(function () {
+        updateCoverflowSize();
+      });
+      ro.observe(app);
+    } else {
+      window.addEventListener("resize", updateCoverflowSize);
     }
 
+    paint();
+
+    requestAnimationFrame(function () {
+      updateCoverflowSize();
+      centerActive(false);
+    });
+    window.setTimeout(function () {
+      updateCoverflowSize();
+      centerActive(false);
+    }, 60);
+
     return {
-      onHide: pause
+      onHide: pause,
+      onDestroy: function () {
+        pause();
+        document.removeEventListener("keydown", onMusicKey);
+        if (ro) ro.disconnect();
+        else window.removeEventListener("resize", updateCoverflowSize);
+      }
     };
   }
 

@@ -1058,7 +1058,14 @@ blockquote {
 }
 
 .app-music:not(.is-single) .music-coverflow {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .app-music:not(.is-single) .music-card {
@@ -1075,13 +1082,25 @@ blockquote {
 }
 
 .music-coverflow-stage {
+  --cf-size: clamp(120px, min(36vw, 36vh), 240px);
   display: flex;
-  gap: 12px;
-  padding: 10px 8px 14px;
+  gap: clamp(12px, 2.5vw, 28px);
+  padding-block: 22px 26px;
+  padding-inline: calc(50% - var(--cf-size, 140px) / 2);
+  width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
-  perspective: 800px;
-  scrollbar-width: thin;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.music-coverflow-stage::-webkit-scrollbar {
+  display: none;
 }
 
 .cf-item {
@@ -1090,64 +1109,72 @@ blockquote {
   position: relative;
   isolation: isolate;
   flex: none;
-  width: 132px;
+  width: var(--cf-size, 140px);
   scroll-snap-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
-  transform: rotateY(38deg) scale(0.82);
-  opacity: 0.62;
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  transform: rotateY(34deg) scale(0.85);
+  transform-style: preserve-3d;
+  opacity: 0.65;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.35s ease;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cf-item::before {
   content: "";
   position: absolute;
-  top: 8px;
+  top: 50%;
   left: 50%;
   z-index: -1;
-  width: 150px;
-  height: 150px;
-  margin-left: -75px;
+  width: calc(var(--cf-size, 140px) * 1.25);
+  height: calc(var(--cf-size, 140px) * 1.25);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--cf-a), 0.55) 0%, rgba(var(--cf-b), 0.28) 46%, transparent 72%);
-  filter: blur(12px);
+  background: radial-gradient(circle, rgba(var(--cf-a), 0.62) 0%, rgba(var(--cf-b), 0.32) 46%, transparent 72%);
+  filter: blur(16px);
   opacity: 0;
-  transform: scale(0.8);
+  transform: translate(-50%, -50%) scale(0.82);
   transition: opacity 0.35s ease, transform 0.35s ease;
   pointer-events: none;
 }
 
-.cf-item.is-active::before,
-.cf-item:hover::before {
-  opacity: 1;
-  transform: scale(1);
+.cf-item.is-before {
+  transform: rotateY(34deg) scale(0.85);
 }
 
-.cf-item:nth-child(even) {
-  transform: rotateY(-38deg) scale(0.82);
+.cf-item.is-after {
+  transform: rotateY(-34deg) scale(0.85);
 }
 
 .cf-item.is-active,
 .cf-item:hover {
   transform: rotateY(0deg) scale(1);
   opacity: 1;
+  z-index: 4;
+}
+
+.cf-item.is-active::before,
+.cf-item:hover::before {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .cf-art {
-  width: 132px;
-  height: 132px;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--cf-a), 0.42);
+  width: var(--cf-size, 140px);
+  height: var(--cf-size, 140px);
+  border-radius: 10px;
+  border: 1px solid rgba(var(--cf-a), 0.45);
   background: var(--surface-mute);
   object-fit: cover;
-  box-shadow: 0 8px 20px rgba(var(--cf-a), 0.2);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 8px 24px rgba(var(--cf-a), 0.25);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
 }
 
 .cf-item.cf-auto .cf-art {
@@ -1156,8 +1183,8 @@ blockquote {
 
 .cf-item.is-active .cf-art,
 .cf-item:hover .cf-art {
-  border-color: rgba(var(--cf-a), 0.82);
-  box-shadow: 0 12px 28px rgba(var(--cf-a), 0.4), 0 0 0 1px rgba(var(--cf-b), 0.32);
+  border-color: rgba(var(--cf-a), 0.88);
+  box-shadow: 0 14px 34px rgba(var(--cf-a), 0.45), 0 0 0 1px rgba(var(--cf-b), 0.35);
 }
 
 .cf-art.is-missing {
@@ -1171,7 +1198,7 @@ blockquote {
 }
 
 .cf-name {
-  font-size: 10.5px;
+  font-size: clamp(10.5px, calc(var(--cf-size, 140px) * 0.08), 13px);
   color: var(--text-dim);
   text-align: center;
   max-width: 100%;
@@ -1179,6 +1206,7 @@ blockquote {
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: color 0.3s ease;
+  pointer-events: none;
 }
 
 .cf-item.is-active .cf-name {
