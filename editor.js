@@ -1063,66 +1063,113 @@
 
   /* ---------- Вкладки ---------- */
 
-  function collectionTab(items, kind, addLabel, makeItem) {
-    const box = el("div", "ed-card");
-    box.style.background = "transparent";
-    box.style.border = "0";
-    box.style.padding = "0";
+  const activeEntry = { note: 0, page: 0, tab: 0 };
 
-    if (!items.length) box.appendChild(el("div", "ed-empty", "пока пусто — добавь первую запись"));
+  function collectionTab(items, kind, addLabel, makeItem) {
+    const wrap = el("div", "ed-split");
+
+    if (!items.length) {
+      const emptyBox = el("div", "ed-card ed-span-all");
+      emptyBox.appendChild(el("div", "ed-empty", "пока пусто — добавь первую запись"));
+      const addEmpty = el("button", "ed-add", addLabel);
+      addEmpty.type = "button";
+      addEmpty.addEventListener("click", function () {
+        items.push(makeItem());
+        activeEntry[kind] = items.length - 1;
+        queueSave();
+        renderPanel();
+      });
+      emptyBox.appendChild(addEmpty);
+      wrap.appendChild(emptyBox);
+      return wrap;
+    }
+
+    let idx = activeEntry[kind] || 0;
+    if (idx < 0) idx = 0;
+    if (idx >= items.length) idx = items.length - 1;
+    activeEntry[kind] = idx;
+
+    const master = el("div", "ed-master");
+    const list = el("div", "ed-master-list");
 
     items.forEach(function (item, index) {
-      box.appendChild(entryCard(item, kind, function () {
-        items.splice(index, 1);
-      }, items, index));
+      const btn = el("button", "ed-master-item" + (index === idx ? " active" : ""));
+      btn.type = "button";
+      const titleText = item.title || (kind === "note" ? "без названия" : kind === "page" ? "страница " + (index + 1) : "вкладка " + (index + 1));
+      btn.appendChild(el("span", null, titleText));
+      const subText = kind === "note" ? (item.date || "") : kind === "tab" ? (item.url || "") : ("стр. " + (index + 1));
+      if (subText) btn.appendChild(el("span", "ed-master-sub", subText));
+      btn.addEventListener("click", function () {
+        activeEntry[kind] = index;
+        renderPanel();
+      });
+      list.appendChild(btn);
     });
+
+    master.appendChild(list);
 
     const add = el("button", "ed-add", addLabel);
     add.type = "button";
+    add.style.width = "100%";
+    add.style.textAlign = "center";
     add.addEventListener("click", function () {
       items.push(makeItem());
+      activeEntry[kind] = items.length - 1;
       queueSave();
       renderPanel();
     });
-    box.appendChild(add);
+    master.appendChild(add);
 
-    return box;
+    const detail = el("div", "ed-detail");
+    detail.appendChild(entryCard(items[idx], kind, function () {
+      items.splice(idx, 1);
+      if (activeEntry[kind] >= items.length) activeEntry[kind] = Math.max(0, items.length - 1);
+    }, items, idx));
+
+    wrap.appendChild(master);
+    wrap.appendChild(detail);
+    return wrap;
   }
 
   function projectTab() {
-    const box = el("div", "ed-card");
-    box.appendChild(el("div", "ed-card-title", "о сайте"));
+    const grid = el("div", "ed-grid-2");
 
-    box.appendChild(presetsBlock());
+    const presets = presetsBlock();
+    presets.classList.add("ed-span-all");
+    grid.appendChild(presets);
 
-    box.appendChild(field("название сайта", draft.meta.title, function (value) {
+    const metaCard = el("div", "ed-card");
+    metaCard.appendChild(el("div", "ed-card-title", "о сайте"));
+
+    metaCard.appendChild(field("название сайта", draft.meta.title, function (value) {
       draft.meta.title = value;
     }, { hint: "показывается во вкладке браузера" }));
 
-    box.appendChild(field("имя пользователя", draft.meta.user, function (value) {
+    metaCard.appendChild(field("имя пользователя", draft.meta.user, function (value) {
       draft.meta.user = value;
     }, { hint: "используется в приглашении терминала" }));
 
-    box.appendChild(field("имя", draft.meta.name, function (value) {
+    metaCard.appendChild(field("имя", draft.meta.name, function (value) {
       draft.meta.name = value;
     }));
 
-    box.appendChild(field("подпись внизу", draft.meta.footer, function (value) {
+    metaCard.appendChild(field("подпись внизу", draft.meta.footer, function (value) {
       draft.meta.footer = value;
     }, { multiline: true, rows: 2 }));
 
-    box.appendChild(previewBlock());
-
     const hint = el("div", "ed-hint", "изменения видны сразу после кнопки «применить». черновик сохраняется сам.");
-    box.appendChild(hint);
+    metaCard.appendChild(hint);
 
     const reset = el("button", "ed-btn ed-btn-danger", "сбросить всё");
     reset.type = "button";
     reset.title = "вернуть исходные данные сайта и удалить черновик";
     reset.addEventListener("click", resetAll);
-    box.appendChild(reset);
+    metaCard.appendChild(reset);
 
-    return box;
+    grid.appendChild(metaCard);
+    grid.appendChild(previewBlock());
+
+    return grid;
   }
 
   /* Пресеты задают окнам фиксированные места: доли от размера экрана.
@@ -1780,7 +1827,8 @@
     wrap.appendChild(el("div", "ed-card-title", "фотографии"));
     wrap.appendChild(el("div", "ed-hint", "картинки положи в папку assets рядом с сайтом и пиши адрес так: assets/имя.svg"));
 
-    if (!draft.photos.length) wrap.appendChild(el("div", "ed-empty", "фотографий нет"));
+    const grid = el("div", "ed-cards-grid");
+    if (!draft.photos.length) grid.appendChild(el("div", "ed-empty ed-span-all", "фотографий нет"));
 
     draft.photos.forEach(function (photo, index) {
       const card = el("div", "ed-card");
@@ -1818,8 +1866,10 @@
         photo.note = value;
       }));
 
-      wrap.appendChild(card);
+      grid.appendChild(card);
     });
+
+    wrap.appendChild(grid);
 
     const add = el("button", "ed-add", "+ фото");
     add.type = "button";
@@ -1842,6 +1892,8 @@
     }, {
       hint: "строка под плеером"
     }));
+
+    const grid = el("div", "ed-cards-grid");
 
     draft.music.tracks.forEach(function (track, index) {
       const card = el("div", "ed-card");
@@ -1900,8 +1952,10 @@
         }
       }));
 
-      wrap.appendChild(card);
+      grid.appendChild(card);
     });
+
+    wrap.appendChild(grid);
 
     const add = el("button", "ed-add", "+ трек");
     add.type = "button";
@@ -2065,16 +2119,22 @@
     wrap.style.padding = "0";
 
     wrap.appendChild(el("div", "ed-hint", "каждая команда — кнопка в терминале и строка в help. «свой javascript-код» даёт полноценную мини-функцию."));
-    wrap.appendChild(fastfetchCard());
+
+    const grid = el("div", "ed-cards-grid");
+    const ff = fastfetchCard();
+    ff.classList.add("ed-span-all");
+    grid.appendChild(ff);
 
     const paths = draft.terminal.paths || (draft.terminal.paths = {});
     const ids = Object.keys(paths);
 
-    if (!ids.length) wrap.appendChild(el("div", "ed-empty", "команд нет"));
+    if (!ids.length) grid.appendChild(el("div", "ed-empty ed-span-all", "команд нет"));
 
     ids.forEach(function (id) {
-      wrap.appendChild(commandCard(id, paths[id]));
+      grid.appendChild(commandCard(id, paths[id]));
     });
+
+    wrap.appendChild(grid);
 
     const add = el("button", "ed-add", "+ команда");
     add.type = "button";
@@ -2092,8 +2152,8 @@
   }
 
   function appsTab() {
-    const wrap = el("div", "ed-apps");
-    const head = el("div", "ed-card");
+    const wrap = el("div", "ed-apps ed-cards-grid");
+    const head = el("div", "ed-card ed-span-all");
     head.appendChild(el("div", "ed-card-title", "приложения на рабочем столе"));
     head.appendChild(el("div", "ed-hint", "каждое приложение — отдельная карточка: порядок в доке, название, размер, иконка и содержимое."));
     wrap.appendChild(head);
@@ -2310,7 +2370,7 @@
       wrap.appendChild(appCard);
     });
 
-    const addCard = el("div", "ed-card");
+    const addCard = el("div", "ed-card ed-span-all");
     addCard.appendChild(el("div", "ed-card-title", "добавить приложение"));
     addCard.appendChild(el("div", "ed-hint", "своя страница-приложение появится в доке отдельным окном."));
 
@@ -2589,6 +2649,8 @@
 
     box.appendChild(el("div", "ed-hint", "значения станут начальными для готового сайта. заблокированное нельзя будет выбрать, скрытое исчезнет из окна настроек. новые пункты — док, сторона дока, подсказки hypr и их размер — правятся здесь же."));
 
+    const grid = el("div", "ed-cards-grid");
+
     if (!Array.isArray(draft.theme.locked)) draft.theme.locked = [];
 
     const colors = el("div", "ed-card");
@@ -2611,7 +2673,7 @@
       draft.theme.lockedCustom = on;
     }));
     colors.appendChild(custom);
-    box.appendChild(colors);
+    grid.appendChild(colors);
 
     const glassCard = el("div", "ed-card");
     glassCard.appendChild(el("div", "ed-card-title", "liquid glass"));
@@ -2631,17 +2693,18 @@
       showGlassWarning();
     });
     glassCard.appendChild(glassBtn);
-    box.appendChild(glassCard);
+    grid.appendChild(glassCard);
 
     draft.settings.forEach(function (item) {
-      box.appendChild(settingsItemCard(item));
+      grid.appendChild(settingsItemCard(item));
     });
 
+    box.appendChild(grid);
     return box;
   }
 
   function guideTab() {
-    const wrap = el("div", "ed-guide");
+    const wrap = el("div", "ed-guide ed-cards-grid");
 
     function card(title, html) {
       const node = el("div", "ed-card");
@@ -2658,9 +2721,11 @@
       return el("pre", "ed-guide-code", text);
     }
 
-    wrap.appendChild(card("гайд: своё приложение в стиле qplate",
+    const intro = card("гайд: своё приложение в стиле qplate",
       '<p class="ed-guide-p">этот гайд — про сам qplate, а не общий учебник по вёрстке. ниже — минимум, чтобы новое окно выглядело своим.</p>' +
-      '<p class="ed-guide-p">приложение — это запись окна в <code>data.js</code> и функция отрисовки в <code>apps.js</code>. ядро трогать не нужно.</p>'));
+      '<p class="ed-guide-p">приложение — это запись окна в <code>data.js</code> и функция отрисовки в <code>apps.js</code>. ядро трогать не нужно.</p>');
+    intro.classList.add("ed-span-all");
+    wrap.appendChild(intro);
 
     const steps = card("как добавить своё окно",
       '<ol class="ed-guide-list">' +

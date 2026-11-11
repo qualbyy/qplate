@@ -389,26 +389,31 @@
       root.setProperty("--surface-paper", shade(rgb, 0.76));
       root.setProperty("--hover-strong", shade(rgb, 0.6));
     } else {
-      root.setProperty("--bg", tint(rgb, 0.93));
-      root.setProperty("--term-bg", tint(rgb, 0.965));
-      root.setProperty("--header-bg", tint(rgb, 0.87));
-      root.setProperty("--border", tint(rgb, 0.78));
-      root.setProperty("--border-dark", tint(rgb, 0.66));
+      /* Для чисто белого/ахроматического пресета подмешиваем нейтральный песочно-серый тон,
+         чтобы в светлой теме не схлопывались границы и фоны окон */
+      const isWhite = rgb.r >= 245 && rgb.g >= 245 && rgb.b >= 245;
+      const baseRgb = isWhite ? { r: 110, g: 104, b: 96 } : rgb;
+
+      root.setProperty("--bg", isWhite ? "#f3f3f0" : tint(rgb, 0.93));
+      root.setProperty("--term-bg", isWhite ? "#fcfcfb" : tint(rgb, 0.965));
+      root.setProperty("--header-bg", isWhite ? "#eaeae6" : tint(rgb, 0.87));
+      root.setProperty("--border", isWhite ? "#d8d8d2" : tint(rgb, 0.78));
+      root.setProperty("--border-dark", isWhite ? "#bebeb6" : tint(rgb, 0.66));
       root.setProperty("--text", "#141210");
       root.setProperty("--text-dim", "#3b352d");
       root.setProperty("--ink", "#141210");
-      root.setProperty("--sand-dark", shade(rgb, 0.2));
-      root.setProperty("--sand-badge", tint(rgb, 0.88));
-      root.setProperty("--prompt-user", tint(rgb, 0.38));
-      root.setProperty("--prompt-path", tint(rgb, 0.55));
-      root.setProperty("--dock-bg", tintAlpha(rgb, 0.87, 0.88));
-      root.setProperty("--dock-hover-bg", tint(rgb, 0.985));
-      root.setProperty("--surface-soft", tint(rgb, 0.96));
-      root.setProperty("--surface-inset", tint(rgb, 0.975));
-      root.setProperty("--surface-deep", tint(rgb, 0.94));
-      root.setProperty("--surface-mute", tint(rgb, 0.9));
-      root.setProperty("--surface-paper", tint(rgb, 0.985));
-      root.setProperty("--hover-strong", tint(rgb, 0.865));
+      root.setProperty("--sand-dark", isWhite ? "#2e2b27" : shade(rgb, 0.2));
+      root.setProperty("--sand-badge", isWhite ? "#e6e6e0" : tint(rgb, 0.88));
+      root.setProperty("--prompt-user", isWhite ? "#4f6b62" : tint(rgb, 0.38));
+      root.setProperty("--prompt-path", isWhite ? "#6e6e67" : tint(rgb, 0.55));
+      root.setProperty("--dock-bg", isWhite ? "rgba(235, 235, 230, 0.88)" : tintAlpha(rgb, 0.87, 0.88));
+      root.setProperty("--dock-hover-bg", isWhite ? "#ffffff" : tint(rgb, 0.985));
+      root.setProperty("--surface-soft", isWhite ? "#f6f6f3" : tint(rgb, 0.96));
+      root.setProperty("--surface-inset", isWhite ? "#fbfbfa" : tint(rgb, 0.975));
+      root.setProperty("--surface-deep", isWhite ? "#eeeee9" : tint(rgb, 0.94));
+      root.setProperty("--surface-mute", isWhite ? "#e3e3dc" : tint(rgb, 0.9));
+      root.setProperty("--surface-paper", isWhite ? "#ffffff" : tint(rgb, 0.985));
+      root.setProperty("--hover-strong", isWhite ? "#ddddd6" : tint(rgb, 0.865));
     }
 
     document.body.classList.toggle("theme-dark", dark);
@@ -1164,6 +1169,7 @@
     win.classList.add("is-minimized");
     win.setAttribute("aria-hidden", "true");
     updateDock(id, false);
+    clearFocusFrom(id);
     saveOpenState();
     layoutHypr();
 
@@ -1187,6 +1193,7 @@
     const win = windows.get(id);
     state[id] = false;
     updateDock(id, false);
+    clearFocusFrom(id);
     saveOpenState();
     playSound("close");
     win.classList.remove("is-minimized");
@@ -1222,10 +1229,45 @@
     }
   }
 
+  function findTopOpenWindow(excludeId) {
+    let bestId = null;
+    let bestZ = -1;
+    DATA.windows.forEach(function (cfg) {
+      if (cfg.id === excludeId || !state[cfg.id]) return;
+      const win = windows.get(cfg.id);
+      const z = win ? (parseInt(win.style.zIndex, 10) || 0) : 0;
+      if (z >= bestZ) {
+        bestZ = z;
+        bestId = cfg.id;
+      }
+    });
+    return bestId;
+  }
+
+  function clearFocusFrom(id) {
+    const win = windows.get(id);
+    if (win) win.classList.remove("is-focused");
+    if (lastFocused === id) {
+      lastFocused = null;
+      const nextId = findTopOpenWindow(id);
+      if (nextId) focusWindow(nextId);
+    }
+  }
+
+  function activeWindowId() {
+    if (lastFocused && state[lastFocused]) return lastFocused;
+    const nextId = findTopOpenWindow(null);
+    if (nextId) {
+      focusWindow(nextId);
+      return nextId;
+    }
+    return null;
+  }
+
   function focusWindow(id) {
-    if (lastFocused === id) return;
     const win = windows.get(id);
     if (!win) return;
+    if (lastFocused === id && win.classList.contains("is-focused")) return;
 
     highestZ += 2;
     win.style.zIndex = String(highestZ);
@@ -1321,7 +1363,6 @@
   }
 
   function toggleMaximize(id) {
-    if (hyprOn()) return;
     const win = windows.get(id);
     if (!win || isMobile() || win.classList.contains("is-kiosk")) return;
 
@@ -1335,28 +1376,34 @@
     if (win.classList.contains("is-maximized")) {
       win.classList.remove("is-maximized");
 
-      const saved = maxSaved.get(id);
-      if (saved) {
-        win.style.left = saved.left;
-        win.style.top = saved.top;
-        win.style.width = saved.width;
-        win.style.height = saved.height;
+      if (hyprOn()) {
+        layoutHypr();
+      } else {
+        const saved = maxSaved.get(id);
+        if (saved) {
+          win.style.left = saved.left;
+          win.style.top = saved.top;
+          win.style.width = saved.width;
+          win.style.height = saved.height;
+        }
       }
 
       win.querySelector(".btn-max").setAttribute("title", "развернуть");
       win.querySelector(".btn-max").setAttribute("aria-label", "развернуть");
-      savePosition(id);
+      if (!hyprOn()) savePosition(id);
       return;
     }
 
-    maxSaved.set(id, {
-      left: win.style.left,
-      top: win.style.top,
-      width: win.style.width,
-      height: win.style.height
-    });
+    if (!hyprOn()) {
+      maxSaved.set(id, {
+        left: win.style.left,
+        top: win.style.top,
+        width: win.style.width,
+        height: win.style.height
+      });
+      win.dataset.sized = "1";
+    }
 
-    win.dataset.sized = "1";
     win.classList.add("is-maximized");
     win.querySelector(".btn-max").setAttribute("title", "вернуть размер");
     win.querySelector(".btn-max").setAttribute("aria-label", "вернуть размер");
@@ -1715,10 +1762,11 @@
       btn.appendChild(document.createTextNode(" " + action[1]));
 
       btn.addEventListener("click", function () {
-        if (!lastFocused || !state[lastFocused]) return;
-        if (action[0] === "q") closeWindow(lastFocused);
-        else if (action[0] === "m") minimizeWindow(lastFocused);
-        else toggleMaximize(lastFocused);
+        const targetId = activeWindowId();
+        if (!targetId) return;
+        if (action[0] === "q") closeWindow(targetId);
+        else if (action[0] === "m") minimizeWindow(targetId);
+        else toggleMaximize(targetId);
       });
 
       bar.appendChild(btn);
@@ -1736,18 +1784,28 @@
     const target = e.target;
     if (target && target.closest && target.closest("input, textarea, select, [contenteditable='true']")) return;
 
+    const code = String(e.code || "");
     const key = String(e.key || "").toLowerCase();
+    let action = "";
+    if (code === "KeyQ" || key === "q") action = "q";
+    else if (code === "KeyM" || key === "m") action = "m";
+    else if (code === "KeyF" || key === "f") action = "f";
 
-    if (key === "q" || key === "m" || key === "f") {
-      if (!lastFocused || !state[lastFocused]) return;
+    if (action) {
+      const targetId = activeWindowId();
+      if (!targetId) return;
       e.preventDefault();
-      if (key === "q") closeWindow(lastFocused);
-      else if (key === "m") minimizeWindow(lastFocused);
-      else toggleMaximize(lastFocused);
+      if (action === "q") closeWindow(targetId);
+      else if (action === "m") minimizeWindow(targetId);
+      else toggleMaximize(targetId);
       return;
     }
 
-    const number = parseInt(key, 10);
+    let number = parseInt(key, 10);
+    if (!(number >= 1 && number <= 9)) {
+      const digitMatch = /^(?:Digit|Numpad)([1-9])$/.exec(code);
+      if (digitMatch) number = parseInt(digitMatch[1], 10);
+    }
     if (!(number >= 1 && number <= 9)) return;
 
     const cfg = (DATA.windows || [])[number - 1];

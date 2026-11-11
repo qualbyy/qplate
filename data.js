@@ -267,7 +267,7 @@ window.DATA = {
     { id: "dockmode", type: "select", group: "док", label: "режим дока", hint: "плавающий или прикреплённый к краю экрана во всю длину", value: "float", options: [["float", "плавающий"], ["iphone", "прикрепленный"]] },
     { id: "dockplace", type: "select", group: "док", label: "сторона дока", hint: "к какому краю экрана прижат док", value: "right", options: [["right", "справа"], ["bottom", "снизу"], ["top", "сверху"], ["left", "слева"]] },
     { id: "docksize", type: "number", group: "док", label: "размер иконок дока", hint: "28–64 точек", value: 44, min: 28, max: 64 },
-    { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "dots", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
+    { id: "wallpaper", type: "wallpaper", group: "рабочий стол", label: "обои", hint: "узор или своя картинка", value: "grid", options: [["none", "чистый фон"], ["dots", "точки"], ["grid", "сетка"], ["waves", "волны"], ["paper", "бумага"]] },
     { id: "clock", type: "toggle", group: "рабочий стол", label: "часы", hint: "время и дата на рабочем столе", value: true },
     { id: "clockpos", type: "select", group: "рабочий стол", label: "где часы", hint: "угол, центр или своё место", value: "tr", options: [["tl", "слева сверху"], ["tc", "сверху по центру"], ["tr", "справа сверху"], ["bl", "слева снизу"], ["bc", "снизу по центру"], ["br", "справа снизу"], ["center", "по центру"], ["custom", "своё место"]] },
     { id: "clocksize", type: "select", group: "рабочий стол", label: "размер часов", hint: "насколько крупно время", value: "m", options: [["s", "мелкие"], ["m", "обычные"], ["l", "крупные"], ["xl", "очень крупные"], ["custom", "своё"]] },
@@ -277,13 +277,14 @@ window.DATA = {
 
   /* Ключевой цвет сайта: пресеты + свой из пипетки. */
   theme: {
-    accent: "white",
+    accent: "iris",
     presets: [
+      { id: "iris", label: "ирис", color: "#8370aa" },
+      { id: "plum", label: "слива", color: "#8a5580" },
       { id: "white", label: "белый", color: "#ffffff" },
       { id: "sand", label: "песок", color: "#a07844" },
       { id: "moss", label: "мох", color: "#6f8b52" },
       { id: "ocean", label: "океан", color: "#3d7196" },
-      { id: "plum", label: "слива", color: "#8a5580" },
       { id: "coral", label: "коралл", color: "#c4644f" },
       { id: "graphite", label: "графит", color: "#4a5a66" }
     ]
