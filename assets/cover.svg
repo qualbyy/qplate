@@ -7,7 +7,7 @@
     <line x1="80" y1="480" x2="520" y2="480"/>
     <line x1="140" y1="510" x2="460" y2="510"/>
   </g>
-  <g fill="#efe4d1" font-family="monospace" font-size="14" opacity="0.8">
+  <g fill="#efe4d1" font-family="'Golos Text', sans-serif" font-size="14" opacity="0.8">
     <text x="64" y="86">демо-альбом</text>
     <text x="64" y="110">you</text>
   </g>

@@ -10,7 +10,7 @@
   const dock = document.getElementById("dock");
 
   if (!window.DATA || !Array.isArray(window.DATA.windows)) {
-    desktop.innerHTML = '<p style="padding:24px;color:#7a7164;font-family:monospace;">не загрузился data.js — проверь, что он лежит рядом с index.html.</p>';
+    desktop.innerHTML = '<p style="padding:24px;color:#7a7164;font-family:\'Golos Text\',sans-serif;">не загрузился data.js — проверь, что он лежит рядом с index.html.</p>';
     return;
   }
 

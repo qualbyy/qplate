@@ -36,8 +36,9 @@
   --hover-strong: #dcdcd7;
   --photo-overlay: rgba(24, 24, 22, 0.82);
 
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: "Golos Text", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-sans);
+  --font-serif: var(--font-sans);
 
   /* Скругление дока */
   --dock-radius: 16px;
@@ -75,7 +76,7 @@ body {
   background-color: var(--bg);
   transition: background-color 0.3s ease;
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 13.5px;
   line-height: 1.55;
   width: 100vw;
@@ -107,10 +108,19 @@ body {
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: inherit;
 }
 
 button {
